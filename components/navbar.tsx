@@ -86,6 +86,7 @@ export function Navbar({ className }: NavbarProps) {
     { name: t("nav.home"), href: "/", icon: Home },
     { name: t("nav.projects"), href: "/projects", icon: FolderOpen },
     { name: t("nav.about"), href: "/about", icon: Info },
+    { name: t("nav.contact"), href: "/contact", icon: Sparkles },
   ]
 
   const authItems = isAuthenticated
