@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -58,7 +59,7 @@ const dialogVariants = {
   exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } },
 }
 
-// Zod schema with client-side file validation
+// Zod schema without file validation
 const formSchema = z.object({
   name: z.string().min(2, { message: "project.nameMinLength" }),
   description: z.string().min(10, { message: "project.descriptionMinLength" }),
@@ -68,25 +69,6 @@ const formSchema = z.object({
   location: z.string().min(2, { message: "project.locationMinLength" }),
   duration: z.coerce.number().int().min(1, { message: "project.durationMin" }).max(60, { message: "project.durationMax" }),
   returnRate: z.coerce.number().min(0, { message: "project.returnRateMin" }).max(100, { message: "project.returnRateMax" }),
-  files: z.any().optional().refine(
-    (files) => {
-      if (!files || typeof window === "undefined") return true // Skip validation on server
-      return files.length <= 5
-    },
-    { message: "project.maxFiles" }
-  ).refine(
-    (files) => {
-      if (!files || typeof window === "undefined") return true
-      return Array.from(files as FileList).every((file) => file.size <= 5 * 1024 * 1024)
-    },
-    { message: "project.maxFileSize" }
-  ).refine(
-    (files) => {
-      if (!files || typeof window === "undefined") return true
-      return Array.from(files).every((file) => ["image/jpeg", "image/png"].includes((file as File).type))
-    },
-    { message: "project.invalidFileType" }
-  ),
 })
 
 // Mock user for testing
@@ -95,6 +77,9 @@ const mockUser = {
   name: "Ahmed Benali",
   email: "ahmed@ecosolutions.dz",
 }
+
+// Dynamic import to disable SSR
+const CreateProjectContent = dynamic(() => Promise.resolve(CreateProjectContentComponent), { ssr: false })
 
 export default function CreateProjectPage() {
   return (
@@ -106,7 +91,7 @@ export default function CreateProjectPage() {
   )
 }
 
-function CreateProjectContent() {
+function CreateProjectContentComponent() {
   const { t, direction } = useLanguage()
   const isRtl = direction === "rtl"
   const { user, isAuthenticated } = useAuth()
@@ -119,7 +104,6 @@ function CreateProjectContent() {
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
   const [isClient, setIsClient] = useState(false)
 
-  // Ensure client-side rendering
   useEffect(() => {
     setIsClient(true)
   }, [])
@@ -135,41 +119,44 @@ function CreateProjectContent() {
       location: "",
       duration: 12,
       returnRate: 5,
-      files: undefined,
     },
   })
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return
-    const selectedFiles = Array.from(e.target.files)
-    const validFiles = selectedFiles.filter(
+  const validateFiles = useCallback((files: File[]): boolean => {
+    if (files.length > 5) {
+      toast({
+        title: t("project.maxFiles"),
+        description: t("project.maxFilesDesc"),
+        variant: "destructive",
+      })
+      return false
+    }
+    const valid = files.every(
       (file) => ["image/jpeg", "image/png"].includes(file.type) && file.size <= 5 * 1024 * 1024
     )
-    if (validFiles.length !== selectedFiles.length) {
+    if (!valid) {
       toast({
         title: t("project.invalidFiles"),
         description: t("project.invalidFilesDesc"),
         variant: "destructive",
       })
     }
-    if (validFiles.length > 5) {
-      toast({
-        title: t("project.maxFiles"),
-        description: t("project.maxFilesDesc"),
-        variant: "destructive",
-      })
-      validFiles.splice(5)
-    }
-    setFiles(validFiles)
-    form.setValue("files", validFiles)
+    return valid
+  }, [toast, t])
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return
+    const selectedFiles = Array.from(e.target.files)
+    if (!validateFiles(selectedFiles)) return
+    setFiles(selectedFiles)
 
     const newPreviews: string[] = []
-    validFiles.forEach((file) => {
+    selectedFiles.forEach((file) => {
       const reader = new FileReader()
       reader.onloadend = () => {
         if (reader.result) {
           newPreviews.push(reader.result as string)
-          if (newPreviews.length === validFiles.length) {
+          if (newPreviews.length === selectedFiles.length) {
             setPreviewImages(newPreviews)
           }
         }
@@ -183,15 +170,14 @@ function CreateProjectContent() {
       }
       reader.readAsDataURL(file)
     })
-  }, [form, toast, t])
+  }, [validateFiles, toast, t])
 
   const handleRemoveFile = useCallback((index: number) => {
     const newFiles = files.filter((_, i) => i !== index)
     const newPreviews = previewImages.filter((_, i) => i !== index)
     setFiles(newFiles)
     setPreviewImages(newPreviews)
-    form.setValue("files", newFiles)
-  }, [files, previewImages, form])
+  }, [files, previewImages])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -207,34 +193,16 @@ function CreateProjectContent() {
     setIsDragging(false)
     if (!e.dataTransfer.files) return
     const selectedFiles = Array.from(e.dataTransfer.files)
-    const validFiles = selectedFiles.filter(
-      (file) => ["image/jpeg", "image/png"].includes(file.type) && file.size <= 5 * 1024 * 1024
-    )
-    if (validFiles.length !== selectedFiles.length) {
-      toast({
-        title: t("project.invalidFiles"),
-        description: t("project.invalidFilesDesc"),
-        variant: "destructive",
-      })
-    }
-    if (validFiles.length > 5) {
-      toast({
-        title: t("project.maxFiles"),
-        description: t("project.maxFilesDesc"),
-        variant: "destructive",
-      })
-      validFiles.splice(5)
-    }
-    setFiles(validFiles)
-    form.setValue("files", validFiles)
+    if (!validateFiles(selectedFiles)) return
+    setFiles(selectedFiles)
 
     const newPreviews: string[] = []
-    validFiles.forEach((file) => {
+    selectedFiles.forEach((file) => {
       const reader = new FileReader()
       reader.onloadend = () => {
         if (reader.result) {
           newPreviews.push(reader.result as string)
-          if (newPreviews.length === validFiles.length) {
+          if (newPreviews.length === selectedFiles.length) {
             setPreviewImages(newPreviews)
           }
         }
@@ -248,7 +216,7 @@ function CreateProjectContent() {
       }
       reader.readAsDataURL(file)
     })
-  }, [form, toast, t])
+  }, [validateFiles, toast, t])
 
   const onSubmit = useCallback(
     async (values: z.infer<typeof formSchema>) => {
@@ -338,13 +306,13 @@ function CreateProjectContent() {
           <Mail className="h-8 w-8 text-green-600 dark:text-green-400" />
         </div>
         <h3 className="font-medium mb-2 text-gray-600 dark:text-gray-400">{t("auth.unauthenticated")}</h3>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">{t("auth.loginToCreatePrompt")}</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">{t("auth.loginToCreateProject")}</p>
         <Button
           variant="link"
           onClick={() => router.push("/auth/login")}
           className="mt-2 text-green-600 dark:text-green-500"
         >
-          {t("Login")}
+          {t("auth.login")}
         </Button>
       </motion.div>
     )
@@ -352,7 +320,7 @@ function CreateProjectContent() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-900">
-      <Navbar />
+      <Navbar className="sticky top-0 z-50" />
       <main className="flex-1 py-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-green-900/20"></div>
         <div className="container relative z-10 max-w-3xl">
@@ -368,9 +336,9 @@ function CreateProjectContent() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-                  {t("Create New Project")}
+                  {t("project.createNew")}
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">{t("Create New Project Description")}</p>
+                <p className="text-gray-600 dark:text-gray-400">{t("project.createNewDesc")}</p>
               </div>
             </div>
           </motion.div>
@@ -378,34 +346,24 @@ function CreateProjectContent() {
           <motion.div variants={staggerContainer} initial="hidden" animate="visible">
             <Card className="border-none shadow-lg bg-white dark:bg-gray-800">
               <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-gray-100">{t("Project Details")}</CardTitle>
-                <CardDescription>{t("Project Details Description")}</CardDescription>
+                <CardTitle className="text-lg text-gray-900 dark:text-gray-100">{t("project.projectDetails")}</CardTitle>
+                <CardDescription>{t("project.projectDetailsDesc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...form}>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      if (!form.formState.isValid) {
-                        form.handleSubmit(() => setOpenConfirmDialog(true))(e)
-                      } else {
-                        setOpenConfirmDialog(true)
-                      }
-                    }}
-                    className="space-y-6"
-                  >
+                  <form onSubmit={form.handleSubmit(() => setOpenConfirmDialog(true))} className="space-y-6">
                     <motion.div variants={fadeInUp}>
                       <FormField
                         control={form.control}
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("Name")}</FormLabel>
+                            <FormLabel>{t("project.name")}</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder={t("Enter project name")}
+                                placeholder={t("project.namePlaceholder")}
                                 {...field}
-                                aria-label={t("Project Name")}
+                                aria-label={t("project.name")}
                               />
                             </FormControl>
                             <FormMessage />
@@ -420,13 +378,13 @@ function CreateProjectContent() {
                         name="description"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("Description")}</FormLabel>
+                            <FormLabel>{t("project.description")}</FormLabel>
                             <FormControl>
                               <Textarea
-                                placeholder={t("Describe your project")}
+                                placeholder={t("project.descriptionPlaceholder")}
                                 className="min-h-[120px]"
                                 {...field}
-                                aria-label={t("Project Description")}
+                                aria-label={t("project.description")}
                               />
                             </FormControl>
                             <FormMessage />
@@ -442,11 +400,11 @@ function CreateProjectContent() {
                           name="sector"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{t("Sector")}</FormLabel>
+                              <FormLabel>{t("project.sector")}</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
-                                  <SelectTrigger aria-label={t("Select Sector")}>
-                                    <SelectValue placeholder={t("Select a sector")} />
+                                  <SelectTrigger aria-label={t("project.sector")}>
+                                    <SelectValue placeholder={t("project.sectorPlaceholder")} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent className="bg-white dark:bg-gray-800 border-green-300 dark:border-gray-700">
@@ -469,7 +427,7 @@ function CreateProjectContent() {
                           name="amount"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{t("Amount")}</FormLabel>
+                              <FormLabel>{t("project.amount")}</FormLabel>
                               <FormControl>
                                 <Input
                                   type="number"
@@ -477,10 +435,10 @@ function CreateProjectContent() {
                                   step="100000"
                                   placeholder="1000000"
                                   {...field}
-                                  aria-label={t("Investment Amount")}
+                                  aria-label={t("project.amount")}
                                 />
                               </FormControl>
-                              <FormDescription>{t("Currency (DZD)")}</FormDescription>
+                              <FormDescription>{t("common.currency")}</FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -493,11 +451,11 @@ function CreateProjectContent() {
                           name="contractType"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{t("Contract Type")}</FormLabel>
+                              <FormLabel>{t("project.contractType")}</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
-                                  <SelectTrigger aria-label={t("Select Contract Type")}>
-                                    <SelectValue placeholder={t("Select a contract type")} />
+                                  <SelectTrigger aria-label={t("project.contractType")}>
+                                    <SelectValue placeholder={t("project.contractTypePlaceholder")} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent className="bg-white dark:bg-gray-800 border-green-300 dark:border-gray-700">
@@ -520,12 +478,12 @@ function CreateProjectContent() {
                           name="location"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{t("Location")}</FormLabel>
+                              <FormLabel>{t("project.location")}</FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder={t("Enter project location")}
+                                  placeholder={t("project.locationPlaceholder")}
                                   {...field}
-                                  aria-label={t("Project Location")}
+                                  aria-label={t("project.location")}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -540,18 +498,18 @@ function CreateProjectContent() {
                           name="duration"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{t("Duration")}</FormLabel>
+                              <FormLabel>{t("project.duration")}</FormLabel>
                               <FormControl>
                                 <Input
-                                type="number"
-                                min="1"
-                                max="100"
-                                placeholder="12"
-                                {...field}
-                                aria-label={t("Project Duration")}
+                                  type="number"
+                                  min="1"
+                                  max="60"
+                                  placeholder="12"
+                                  {...field}
+                                  aria-label={t("project.duration")}
                                 />
                               </FormControl>
-                              <FormDescription>{t("Duration in Months")}</FormDescription>
+                              <FormDescription>{t("project.durationMonths")}</FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -564,7 +522,7 @@ function CreateProjectContent() {
                           name="returnRate"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{t("Return Rate")}</FormLabel>
+                              <FormLabel>{t("project.returnRate")}</FormLabel>
                               <FormControl>
                                 <Input
                                   type="number"
@@ -573,10 +531,10 @@ function CreateProjectContent() {
                                   step="0.1"
                                   placeholder="5"
                                   {...field}
-                                  aria-label={t("Expected Return Rate")}
+                                  aria-label={t("project.returnRate")}
                                 />
                               </FormControl>
-                              <FormDescription>{t("Return Rate (%)")}</FormDescription>
+                              <FormDescription>{t("project.returnRateDesc")}</FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -589,92 +547,82 @@ function CreateProjectContent() {
                     </motion.div>
 
                     <motion.div variants={fadeInUp}>
-                      <FormField
-                        control={form.control}
-                        name="files"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t("Project Images")}</FormLabel>
-                            <FormControl>
-                              <div className="grid gap-4">
-                                <div
-                                  className={cn(
-                                    "flex items-center justify-center w-full border-2 border-dashed rounded-lg",
-                                    isDragging ? "border-green-600 bg-green-100" : "border-gray-300 dark:border-gray-600"
-                                  )}
-                                  onDragOver={handleDragOver}
-                                  onDragLeave={handleDragLeave}
-                                  onDrop={handleDrop}
-                                >
-                                  <label
-                                    htmlFor="file-upload"
-                                    className={cn(
-                                      "flex flex-col items-center justify-center w-full h-32 cursor-pointer",
-                                      isDragging ? "bg-green-200 dark:bg-green-900/20" : "bg-gray-50 dark:bg-gray-800/50"
-                                    )}
-                                  >
-                                    <div className="flex flex-col items-center justify-center py-4">
-                                      <Upload className="w-6 h-6 mb-2 text-green-600 dark:text-green-400" />
-                                      <p className="mb-1 text-sm text-gray-600 dark:text-gray-400">
-                                        {isDragging ? t("Drop Files") : t("Drag & Drop or Click Files")}
-                                      </p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-500">
-                                        {t("Supported Formats: JPEG, PNG (Max 5MB, 5 Files)")}
-                                      </p>
-                                    </div>
-                                    <Input
-                                      id="file-upload"
-                                      type="file"
-                                      multiple
-                                      accept="image/jpeg,image/png"
-                                      className="hidden"
-                                      onChange={handleFileChange}
-                                      onBlur={field.onBlur}
-                                      name={field.name}
-                                      ref={field.ref}
-                                    />
-                                  </label>
-                                </div>
-
-                                {previewImages.length > 0 && (
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                    {previewImages.map((preview, index) => (
-                                      <div
-                                        key={index}
-                                        className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
-                                      >
-                                        <img
-                                          src={preview}
-                                          alt={t(`Image Preview ${index + 1}`)}
-                                          className="w-full h-full object-cover"
-                                          onError={() =>
-                                            toast({
-                                              title: t("project.imageLoadError"),
-                                              description: t("project.imageLoadErrorDesc"),
-                                              variant: "destructive",
-                                            })
-                                          }
-                                        />
-                                        <Button
-                                          variant="destructive"
-                                          size="icon"
-                                          className="absolute top-2 right-2 h-6 w-6 rounded-full"
-                                          onClick={() => handleRemoveFile(index)}
-                                          aria-label={t("Remove Image {index}")}
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                    ))}
-                                  </div>
+                      <FormItem>
+                        <FormLabel>{t("project.images")}</FormLabel>
+                        <FormControl>
+                          <div className="grid gap-4">
+                            <div
+                              className={cn(
+                                "flex items-center justify-center w-full border-2 border-dashed rounded-lg",
+                                isDragging ? "border-green-600 bg-green-100" : "border-gray-300 dark:border-gray-600"
+                              )}
+                              onDragOver={handleDragOver}
+                              onDragLeave={handleDragLeave}
+                              onDrop={handleDrop}
+                            >
+                              <label
+                                htmlFor="file-upload"
+                                className={cn(
+                                  "flex flex-col items-center justify-center w-full h-32 cursor-pointer",
+                                  isDragging ? "bg-green-200 dark:bg-green-900/20" : "bg-gray-50 dark:bg-gray-800/50"
                                 )}
+                              >
+                                <div className="flex flex-col items-center justify-center py-4">
+                                  <Upload className="w-6 h-6 mb-2 text-green-600 dark:text-green-400" />
+                                  <p className="mb-1 text-sm text-gray-600 dark:text-gray-400">
+                                    {isDragging ? t("project.dropFiles") : t("project.dragAndDrop")}
+                                  </p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                                    {t("project.fileTypes")}
+                                  </p>
+                                </div>
+                                <Input
+                                  id="file-upload"
+                                  type="file"
+                                  multiple
+                                  accept="image/jpeg,image/png"
+                                  className="hidden"
+                                  onChange={handleFileChange}
+                                />
+                              </label>
+                            </div>
+
+                            {previewImages.length > 0 && (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {previewImages.map((preview, index) => (
+                                  <div
+                                    key={index}
+                                    className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+                                  >
+                                    <img
+                                      src={preview}
+                                      alt={t("project.preview")}
+                                      className="w-full h-full object-cover"
+                                      onError={() =>
+                                        toast({
+                                          title: t("project.imageLoadError"),
+                                          description: t("project.imageLoadErrorDesc"),
+                                          variant: "destructive",
+                                        })
+                                      }
+                                    />
+                                    <Button
+                                      variant="destructive"
+                                      size="icon"
+                                      className="absolute top-2 right-2 h-6 w-6 rounded-full"
+                                      onClick={() => handleRemoveFile(index)}
+                                      aria-label={t("project.removeImage")}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
                               </div>
-                            </FormControl>
-                            <FormDescription>{t("Upload up to 5 images (JPEG/PNG, max 5MB each)")}</FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormDescription>{t("project.imagesDescription")}</FormDescription>
+                      </FormItem>
                     </motion.div>
 
                     <motion.div variants={fadeInUp} className="flex justify-between items-center">
@@ -684,7 +632,7 @@ function CreateProjectContent() {
                         onClick={() => router.push("/projects")}
                         className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20"
                       >
-                        {t("Cancel")}
+                        {t("common.cancel")}
                       </Button>
                       <Dialog open={openConfirmDialog} onOpenChange={setOpenConfirmDialog}>
                         <DialogTrigger asChild>
@@ -697,7 +645,7 @@ function CreateProjectContent() {
                               <Loader2 className="h-4 w-4 animate-spin mr-2" />
                             ) : (
                               <>
-                                {t("Submit for Review")}
+                                {t("project.submitForReview")}
                                 <ArrowRight
                                   className={cn("h-4 w-4", isRtl ? "mr-2" : "ml-2")}
                                 />
@@ -713,8 +661,8 @@ function CreateProjectContent() {
                             exit="exit"
                           >
                             <DialogHeader>
-                              <DialogTitle className="text-lg text-green-600 dark:text-green-400">{t("Confirm Submission")}</DialogTitle>
-                              <DialogDescription>{t("Confirm Submission Description")}</DialogDescription>
+                              <DialogTitle className="text-lg text-green-600 dark:text-green-400">{t("project.confirmSubmission")}</DialogTitle>
+                              <DialogDescription>{t("project.confirmSubmissionDesc")}</DialogDescription>
                             </DialogHeader>
                             <DialogFooter className="mt-4">
                               <Button
@@ -722,7 +670,7 @@ function CreateProjectContent() {
                                 onClick={() => setOpenConfirmDialog(false)}
                                 className="border-gray-300 dark:border-gray-600 hover:bg-green-50 dark:hover:bg-green-900/20"
                               >
-                                {t("Cancel")}
+                                {t("common.cancel")}
                               </Button>
                               <Button
                                 onClick={form.handleSubmit(onSubmit)}
@@ -732,7 +680,7 @@ function CreateProjectContent() {
                                 {isLoading ? (
                                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                 ) : (
-                                  t("Confirm")
+                                  t("project.confirm")
                                 )}
                               </Button>
                             </DialogFooter>
