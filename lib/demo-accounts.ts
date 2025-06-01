@@ -373,7 +373,7 @@ const demoProjects: Project[] = [
         title: "Bank Integration",
         description: "Complete integration with major Algerian banks",
         dueDate: new Date(2023, 6, 15).toISOString(),
-        status: "in-progress",
+        status: "pending",
       },
     ],
   },
@@ -819,8 +819,19 @@ const generateTransactions = (): Transaction[] => {
 
 // Initialize demo accounts
 export function initializeDemoAccounts() {
-  // Check if demo accounts are already initialized
-  if (!localStorage.getItem("demoAccountsInitialized")) {
+  // Check if demo accounts are initialized or users list is empty/corrupted
+  const users = JSON.parse(localStorage.getItem("users") || "[]")
+  if (!localStorage.getItem("demoAccountsInitialized") || users.length === 0) {
+    // Reset localStorage
+    localStorage.removeItem("users")
+    localStorage.removeItem("wallets")
+    localStorage.removeItem("projects")
+    localStorage.removeItem("services")
+    localStorage.removeItem("serviceRequests")
+    localStorage.removeItem("investments")
+    localStorage.removeItem("transactions")
+    localStorage.removeItem("demoAccountsInitialized")
+
     // Initialize users
     localStorage.setItem("users", JSON.stringify(demoUsers))
 
