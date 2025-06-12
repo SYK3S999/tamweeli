@@ -67,28 +67,14 @@ export default function AboutPage() {
       id: 1,
       name: t("about.teamMember1Name"),
       title: t("about.teamMember1Title"),
-      image: "/team-member-1.jpg",
+      image: "/malak1.jpg",
       socials: { twitter: "#", linkedin: "#", github: "#" },
     },
     {
       id: 2,
       name: t("about.teamMember2Name"),
       title: t("about.teamMember2Title"),
-      image: "/team-member-2.jpg",
-      socials: { twitter: "#", linkedin: "#", github: "#" },
-    },
-    {
-      id: 3,
-      name: t("about.teamMember3Name"),
-      title: t("about.teamMember3Title"),
-      image: "/team-member-3.jpg",
-      socials: { twitter: "#", linkedin: "#", github: "#" },
-    },
-    {
-      id: 4,
-      name: t("about.teamMember4Name"),
-      title: t("about.teamMember4Title"),
-      image: "/team-member-4.jpg",
+      image: "/nourcin.jpg",
       socials: { twitter: "#", linkedin: "#", github: "#" },
     },
   ]
@@ -398,48 +384,48 @@ export default function AboutPage() {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true }}
-              className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4"
+              className="flex flex-wrap justify-center gap-8"
             >
               {isVisible ? (
-                teamMembers.map((member) => (
-                  <motion.div
-                    key={member.id}
-                    variants={{ ...item, ...cardHover }}
-                    whileHover="hover"
-                    className="group bg-white dark:bg-gray-800 rounded-lg p-6 text-center border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300"
-                  >
-                    <div className="relative mb-6 mx-auto">
-                      <div className="h-48 w-48 mx-auto rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                        <img
-                          src={member.image}
-                          alt={member.name}
-                          className="h-full w-full object-cover"
-                          onError={(e) => (e.currentTarget.src = "/api/placeholder/200/200")}
-                        />
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:-translate-y-2">
-                        <Link href={member.socials.twitter} className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700">
-                          <Twitter className="h-5 w-5 text-green-600 dark:text-green-500" />
-                        </Link>
-                        <Link href={member.socials.linkedin} className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700">
-                          <Linkedin className="h-5 w-5 text-green-600 dark:text-green-500" />
-                        </Link>
-                        <Link href={member.socials.github} className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700">
-                          <Github className="h-5 w-5 text-green-600 dark:text-green-500" />
-                        </Link>
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{member.name}</h3>
-                    <p className="text-green-600 dark:text-green-500 mb-3">{member.title}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{t(`about.teamMember${member.id}Bio`)}</p>
-                  </motion.div>
-                ))
+          teamMembers.map((member) => (
+            <motion.div
+              key={member.id}
+              variants={{ ...item, ...cardHover }}
+              whileHover="hover"
+              className="group bg-white dark:bg-gray-800 rounded-lg p-6 text-center border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300 w-full sm:w-96"
+            >
+              <div className="relative mb-6 mx-auto">
+                <div className="h-48 w-48 mx-auto rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                  <img
+                  src={member.image}
+                  alt={member.name}
+                  className="h-full w-full object-cover object-top"
+                  onError={(e) => (e.currentTarget.src = "/api/placeholder/200/200")}
+                  />
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:-translate-y-2">
+            <Link href={member.socials.twitter} className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Twitter className="h-5 w-5 text-green-600 dark:text-green-500" />
+            </Link>
+            <Link href={member.socials.linkedin} className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Linkedin className="h-5 w-5 text-green-600 dark:text-green-500" />
+            </Link>
+            <Link href={member.socials.github} className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Github className="h-5 w-5 text-green-600 dark:text-green-500" />
+            </Link>
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{member.name}</h3>
+              <p className="text-green-600 dark:text-green-500 mb-3">{member.title}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t(`about.teamMember${member.id}Bio`)}</p>
+            </motion.div>
+          ))
               ) : (
-                Array.from({ length: 4 }).map((_, index) => (
-                  <motion.div key={index} variants={item}>
-                    <Skeleton className="h-80 w-full rounded-lg bg-gray-200 dark:bg-gray-700" />
-                  </motion.div>
-                ))
+          Array.from({ length: 2 }).map((_, index) => (
+            <motion.div key={index} variants={item} className="w-full sm:w-96">
+              <Skeleton className="h-80 w-full rounded-lg bg-gray-200 dark:bg-gray-700" />
+            </motion.div>
+          ))
               )}
             </motion.div>
           </div>

@@ -61,7 +61,7 @@ const cardHover = {
 // Mock data
 const mockProject: Project = {
   id: "proj-1",
-  title: "EcoSolutions Water Purification",
+  title: "tamweeli Water Purification",
   description: "Revolutionary nano-filtration technology bringing clean water to 10M+ people in rural areas across Africa and Asia.",
   sector: "healthcare",
   status: "approved",

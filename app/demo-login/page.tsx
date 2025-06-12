@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
@@ -54,7 +55,7 @@ export default function DemoLoginPage() {
         if (success) {
           toast({
             title: t("demo.loginSuccess"),
-            description: t("demo.loginSuccessDesc",),
+            description: t("demo.loginSuccessDesc"),
             className: "bg-background/95 border-primary/20",
           })
           router.push("/dashboard")
@@ -92,7 +93,7 @@ export default function DemoLoginPage() {
       icon: User,
       title: t("demo.investor"),
       description: t("demo.investorDesc"),
-      email: "investor@ecosolutions.dz",
+      email: "investor@tamweeli.dz",
       password: "password123",
     },
     {
@@ -100,7 +101,7 @@ export default function DemoLoginPage() {
       icon: Building,
       title: t("demo.entrepreneur"),
       description: t("demo.entrepreneurDesc"),
-      email: "entrepreneur@ecosolutions.dz",
+      email: "entrepreneur@tamweeli.dz",
       password: "password123",
     },
     {
@@ -108,7 +109,7 @@ export default function DemoLoginPage() {
       icon: Shield,
       title: t("demo.admin"),
       description: t("demo.adminDesc"),
-      email: "admin@ecosolutions.dz",
+      email: "admin@tamweeli.dz",
       password: "password123",
     },
   ]
@@ -197,7 +198,7 @@ export default function DemoLoginPage() {
                         className="w-full rounded-full px-8 py-6 text-lg font-semibold bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-300 group"
                         onClick={() => handleDemoLogin(account.email, account.password, account.type)}
                         disabled={isLoading}
-                        aria-label={t(`demo.loginAs${account.type.charAt(0).toUpperCase() + account.type.slice(1)}`)}
+                        aria-label={t(`demo.loginAs`)}
                       >
                         {loadingAccount === account.type ? (
                           <>
@@ -205,26 +206,10 @@ export default function DemoLoginPage() {
                             {t("demo.loading")}
                           </>
                         ) : (
-                            <span className="flex items-center gap-3">
-                            {account.type === "investor" && (
-                              <>
-                              {t("demo.loginAsInvestor")}
-                              <ArrowRight className={cn("h-5 w-5 transition-transform group-hover:translate-x-2", isRtl && "rotate-180")} />
-                              </>
-                            )}
-                            {account.type === "entrepreneur" && (
-                              <>
-                              {t("demo.loginAsEntrepreneur")}
-                              <ArrowRight className={cn("h-5 w-5 transition-transform group-hover:translate-x-2", isRtl && "rotate-180")} />
-                              </>
-                            )}
-                            {account.type === "admin" && (
-                              <>
-                              {t("demo.loginAsAdmin")}
-                              <ArrowRight className={cn("h-5 w-5 transition-transform group-hover:translate-x-2", isRtl && "rotate-180")} />
-                              </>
-                            )}
-                            </span>
+                          <span className="flex items-center gap-3">
+                            {t("demo.loginAs")}
+                            <ArrowRight className={cn("h-5 w-5 transition-transform group-hover:translate-x-2", isRtl && "rotate-180")} />
+                          </span>
                         )}
                       </Button>
                     </CardFooter>

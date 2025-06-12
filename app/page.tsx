@@ -91,7 +91,20 @@ const slideIn = {
 }
 
 // Enhanced testimonials with more variety
-const testimonials = [
+type Testimonial = {
+  name: string
+  role: string
+  company: string
+  avatar: string
+  content: string
+  rating: number
+  verified: boolean
+  fundingAmount?: number
+  investmentCount?: number
+  clientsHelped?: number
+}
+
+const testimonials: Testimonial[] = [
   {
     name: "Sarah Ahmed",
     role: "Tech Entrepreneur",
@@ -100,7 +113,8 @@ const testimonials = [
     content: "Tamweeli revolutionized how I approach funding. Within 3 months, I secured $150K from 12 different investors. The platform's AI-matching system connected me with investors who truly understood my vision.",
     rating: 5,
     verified: true,
-    fundingAmount: 150000
+    fundingAmount: 150000,
+    clientsHelped: undefined
   },
   {
     name: "Omar Khalid",
@@ -110,18 +124,10 @@ const testimonials = [
     content: "As an investor managing a $2M portfolio, Tamweeli's due diligence tools and project analytics have been game-changing. I've discovered 3 unicorn potentials through this platform.",
     rating: 5,
     verified: true,
-    investmentCount: 24
+    investmentCount: 24,
+    clientsHelped: undefined
   },
-  {
-    name: "Layla Mahmoud",
-    role: "Business Consultant",
-    company: "Growth Partners",
-    avatar: "/avatars/layla.jpg",
-    content: "The consultant marketplace on Tamweeli has tripled my client base. I've helped 40+ startups optimize their pitch decks and business models. It's a goldmine for experienced consultants.",
-    rating: 5,
-    verified: true,
-    clientsHelped: 40
-  },
+ 
   {
     name: "Ahmed Hassan",
     role: "Fintech Founder",
@@ -130,7 +136,8 @@ const testimonials = [
     content: "From idea to Series A in 18 months - Tamweeli was instrumental in every funding round. The community support and mentor network are unparalleled.",
     rating: 5,
     verified: true,
-    fundingAmount: 3500000
+    fundingAmount: 3500000,
+    clientsHelped: undefined
   }
 ]
 
@@ -138,7 +145,7 @@ const testimonials = [
 const featuredProjects = [
   {
     id: "project-1",
-    title: "EcoSolutions Water Purification",
+    title: "tamweeli Water Purification",
     description: "Revolutionary nano-filtration technology bringing clean water to 10M+ people in rural areas across Africa and Asia.",
     image: "/water.jpg?height=280&width=400",
     category: "Sustainability",
@@ -832,9 +839,9 @@ export default function HomePage() {
               >
                 <TabsList className="inline-flex h-auto p-1 bg-background/80 border border-primary/20 rounded-2xl shadow-sm">
                   {[
-                    { value: "entrepreneurs", icon: "🚀", label: t("home.entrepreneurs") },
+                    { value: "entrepreneurs", icon: "🚀", label: t("home.entrepreneur") },
                     { value: "investors", icon: "💼", label: t("home.investors") },
-                    { value: "consultants", icon: "🎯", label: t("home.consultants") },
+                    
                   ].map((item, index) => (
                     <motion.div
                       key={item.value}
@@ -868,15 +875,15 @@ export default function HomePage() {
                   {
                     key: "entrepreneurs",
                     icon: "🚀",
-                    title: t("home.entrepreneursTitle"),
-                    description: t("home.entrepreneursDesc"),
+                    title: t("home.entrepreneurTitle"),
+                    description: t("home.entrepreneurDesc"),
                     benefits: [
-                      t("home.entrepreneursBenefit1"),
-                      t("home.entrepreneursBenefit2"),
-                      t("home.entrepreneursBenefit3"),
-                      t("home.entrepreneursBenefit4"),
+                      t("home.entrepreneurBenefit1"),
+                      t("home.entrepreneurBenefit2"),
+                      t("home.entrepreneurBenefit3"),
+                      t("home.entrepreneurBenefit4"),
                     ],
-                    ctaText: t("home.entrepreneursCTAText"),
+                    ctaText: t("home.entrepreneurCTAText"),
                     ctaLink: "/projects/create",
                   },
                   {
@@ -893,20 +900,7 @@ export default function HomePage() {
                     ctaText: t("home.investorsCTAText"),
                     ctaLink: "/projects",
                   },
-                  {
-                    key: "consultants",
-                    icon: "🎯",
-                    title: t("home.consultantsTitle"),
-                    description: t("home.consultantsDesc"),
-                    benefits: [
-                      t("home.consultantsBenefit1"),
-                      t("home.consultantsBenefit2"),
-                      t("home.consultantsBenefit3"),
-                      t("home.consultantsBenefit4"),
-                    ],
-                    ctaText: t("home.consultantsCTAText"),
-                    ctaLink: "/auth/register",
-                  },
+                  
                 ].map((tab) => (
                   <TabsContent
                     key={tab.key}
@@ -1301,37 +1295,37 @@ export default function HomePage() {
               className="text-center mb-20"
             >
               <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                whileInView={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                viewport={{ once: true }}
+          initial={{ scale: 0.8, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          viewport={{ once: true }}
               >
-                <Badge
-                  variant="outline"
-                  className="mb-6 px-4 py-2 text-base font-medium bg-primary/5 border-primary/20 hover:bg-primary/10 hover:scale-105 transition-all duration-300 rounded-full"
-                >
-                  <Sparkles className="w-4 h-4 mr-2 text-primary animate-pulse" />
-                  <span className="text-primary">{t("home.testimonials")}</span>
-                </Badge>
+          <Badge
+            variant="outline"
+            className="mb-6 px-4 py-2 text-base font-medium bg-primary/5 border-primary/20 hover:bg-primary/10 hover:scale-105 transition-all duration-300 rounded-full"
+          >
+            <Sparkles className="w-4 h-4 mr-2 text-primary animate-pulse" />
+            <span className="text-primary">{t("home.testimonials")}</span>
+          </Badge>
               </motion.div>
 
               <motion.h2
-                initial={{ y: 30, opacity: 0 }}
-                whileInView={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                viewport={{ once: true }}
-                className="text-4xl md:text-6xl font-semibold text-primary mb-6 leading-tight"
+          initial={{ y: 30, opacity: 0 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          viewport={{ once: true }}
+          className="text-4xl md:text-6xl font-semibold text-primary mb-6 leading-tight"
               >
-                {t("home.successStories")}
+          {t("home.successStories")}
               </motion.h2>
               
               <motion.p 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-                className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed"
               >
-                {t("home.successStoriesDesc")}
+          {t("home.successStoriesDesc")}
               </motion.p>
             </motion.div>
 
@@ -1340,99 +1334,100 @@ export default function HomePage() {
               whileInView="visible"
               viewport={{ once: true }}
               variants={staggerContainer}
-              className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-8xl mx-auto"
+              // Center the testimonials if only 3
+              className="flex flex-wrap justify-center gap-8 max-w-8xl mx-auto"
             >
               {testimonials.map((testimonial, index) => (
-                <motion.div 
-                  key={index} 
-                  variants={fadeInUp}
-                  whileHover={{ 
-                    y: -10, 
-                    transition: { duration: 0.3, type: "spring", stiffness: 300 } 
-                  }}
-                  className="relative group h-full"
+          <motion.div 
+            key={index} 
+            variants={fadeInUp}
+            whileHover={{ 
+              y: -10, 
+              transition: { duration: 0.3, type: "spring", stiffness: 300 } 
+            }}
+            className="relative group h-full w-full md:w-[350px] lg:w-[350px] xl:w-[350px] flex-shrink-0"
+          >
+            <div className="absolute -left-2 -top-2 text-primary/30 text-8xl font-serif leading-none pointer-events-none z-0 transition-all duration-500 group-hover:text-primary/50 group-hover:scale-110">
+              "
+            </div>
+            
+            <Card className="h-full border-0 bg-background/95 shadow-sm hover:shadow-md transition-all duration-500 rounded-2xl">
+              <CardContent className="p-8 pt-12 space-y-6 relative z-10">
+                <div className="flex items-center justify-between mb-4">
+            <div className="flex space-x-1">
+              {Array(testimonial.rating).fill(0).map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ scale: 0, rotate: -180 }}
+                  whileInView={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
                 >
-                  <div className="absolute -left-2 -top-2 text-primary/30 text-8xl font-serif leading-none pointer-events-none z-0 transition-all duration-500 group-hover:text-primary/50 group-hover:scale-110">
-                    "
-                  </div>
-                  
-                  <Card className="h-full border-0 bg-background/95 shadow-sm hover:shadow-md transition-all duration-500 rounded-2xl">
-                    <CardContent className="p-8 pt-12 space-y-6 relative z-10">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex space-x-1">
-                          {Array(testimonial.rating).fill(0).map((_, i) => (
-                            <motion.div
-                              key={i}
-                              initial={{ scale: 0, rotate: -180 }}
-                              whileInView={{ scale: 1, rotate: 0 }}
-                              transition={{ delay: i * 0.1, duration: 0.5 }}
-                            >
-                              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                            </motion.div>
-                          ))}
-                        </div>
-                        {testimonial.verified && (
-                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20 rounded-full px-3 py-1">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            <span className="text-xs font-medium">{t("home.verified")}</span>
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <blockquote className="text-muted-foreground leading-relaxed text-base line-clamp-6 italic">
-                        {testimonial.content}
-                      </blockquote>
-                      
-                      <div className="flex items-center space-x-4 pt-4 border-t border-primary/20">
-                        <div className="relative">
-                          <Avatar className="h-14 w-14 border-2 border-primary/20">
-                            <AvatarImage src={testimonial.avatar} alt={testimonial.name} className="object-cover" />
-                            <AvatarFallback className="bg-primary/10 text-foreground font-semibold text-lg">
-                              {testimonial.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          {testimonial.verified && (
-                            <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-1">
-                              <CheckCircle2 className="h-3 w-3 text-white" />
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-bold text-foreground truncate">{testimonial.name}</h4>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {testimonial.role} • {testimonial.company}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {(testimonial.fundingAmount || testimonial.investmentCount || testimonial.clientsHelped) && (
-                        <div className="pt-4 border-t border-primary/20">
-                          <div className="flex items-center justify-between text-xs">
-                            {testimonial.fundingAmount && (
-                              <div className="flex items-center space-x-1 text-emerald-600 dark:text-emerald-400">
-                                <TrendingUp className="h-3 w-3" />
-                                <span className="font-medium">{formatCurrency(testimonial.fundingAmount, t)}</span>
-                              </div>
-                            )}
-                            {testimonial.investmentCount && (
-                              <div className="flex items-center space-x-1 text-blue-600 dark:text-blue-400">
-                                <Target className="h-3 w-3" />
-                                <span className="font-medium">{testimonial.investmentCount}</span>
-                              </div>
-                            )}
-                            {testimonial.clientsHelped && (
-                              <div className="flex items-center space-x-1 text-purple-600 dark:text-purple-400">
-                                <Users className="h-3 w-3" />
-                                <span className="font-medium">{testimonial.clientsHelped}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                 </motion.div>
+              ))}
+            </div>
+            {testimonial.verified && (
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20 rounded-full px-3 py-1">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                <span className="text-xs font-medium">{t("home.verified")}</span>
+              </Badge>
+            )}
+                </div>
+                
+                <blockquote className="text-muted-foreground leading-relaxed text-base line-clamp-6 italic">
+            {testimonial.content}
+                </blockquote>
+                
+                <div className="flex items-center space-x-4 pt-4 border-t border-primary/20">
+            <div className="relative">
+              <Avatar className="h-14 w-14 border-2 border-primary/20">
+                <AvatarImage src={testimonial.avatar} alt={testimonial.name} className="object-cover" />
+                <AvatarFallback className="bg-primary/10 text-foreground font-semibold text-lg">
+                  {testimonial.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              {testimonial.verified && (
+                <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-1">
+                  <CheckCircle2 className="h-3 w-3 text-white" />
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-bold text-foreground truncate">{testimonial.name}</h4>
+              <p className="text-xs text-muted-foreground truncate">
+                {testimonial.role} • {testimonial.company}
+              </p>
+            </div>
+                </div>
+                
+                {(testimonial.fundingAmount || testimonial.investmentCount || testimonial.clientsHelped) && (
+            <div className="pt-4 border-t border-primary/20">
+              <div className="flex items-center justify-between text-xs">
+                {testimonial.fundingAmount && (
+                  <div className="flex items-center space-x-1 text-emerald-600 dark:text-emerald-400">
+              <TrendingUp className="h-3 w-3" />
+              <span className="font-medium">{formatCurrency(testimonial.fundingAmount, t)}</span>
+                  </div>
+                )}
+                {testimonial.investmentCount && (
+                  <div className="flex items-center space-x-1 text-blue-600 dark:text-blue-400">
+              <Target className="h-3 w-3" />
+              <span className="font-medium">{testimonial.investmentCount}</span>
+                  </div>
+                )}
+                {testimonial.clientsHelped && (
+                  <div className="flex items-center space-x-1 text-purple-600 dark:text-purple-400">
+              <Users className="h-3 w-3" />
+              <span className="font-medium">{testimonial.clientsHelped}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
               ))}
             </motion.div>
             
@@ -1443,19 +1438,18 @@ export default function HomePage() {
               className="text-center mt-16"
             >
               <p className="text-lg text-muted-foreground mb-6">
-                Ready to join our success stories?
+          Ready to join our success stories?
               </p>
               <Button 
-                size="lg"
-                className="rounded-full px-8 py-6 text-lg font-semibold bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-300 group"
+          size="lg"
+          className="rounded-full px-8 py-6 text-lg font-semibold bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-300 group"
               >
-                Start Your Journey
-                <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
+          Start Your Journey
+          <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
             </motion.div>
           </div>
         </section>
-
         {/* Security Section */}
         <section className="py-24 md:py-32 relative overflow-hidden" id="security">
           <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-secondary/10 dark:from-background dark:via-primary/10 dark:to-secondary/20"></div>

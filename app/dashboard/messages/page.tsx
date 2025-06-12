@@ -55,19 +55,19 @@ const mockConversations = [
 ]
 
 const mockMessages = [
-  { id: "msg-1", conversationId: "conv-1", senderId: "user-2", receiverId: "user-1", content: "Hi Amina, interested in the EcoSolutions project?", createdAt: "2025-05-30T17:50:00Z", isRead: false },
+  { id: "msg-1", conversationId: "conv-1", senderId: "user-2", receiverId: "user-1", content: "Hi Amina, interested in the tamweeli project?", createdAt: "2025-05-30T17:50:00Z", isRead: false },
   { id: "msg-2", conversationId: "conv-1", senderId: "user-1", receiverId: "user-2", content: "Hey Karim, yes, it looks promising!", createdAt: "2025-05-30T17:55:00Z", isRead: true },
   { id: "msg-3", conversationId: "conv-1", senderId: "user-2", receiverId: "user-1", content: "Great! Want to discuss investment details?", createdAt: "2025-05-30T18:00:00Z", isRead: false },
   { id: "msg-4", conversationId: "conv-1", senderId: "user-1", receiverId: "user-2", content: "Sure, let's set up a call.", createdAt: "2025-05-30T18:05:00Z", isRead: true },
   { id: "msg-5", conversationId: "conv-1", senderId: "user-2", receiverId: "user-1", content: "Perfect, how about tomorrow at 10 AM?", createdAt: "2025-05-30T18:07:00Z", isRead: false },
-  { id: "msg-6", conversationId: "conv-2", senderId: "user-3", receiverId: "user-1", content: "Amina, we're considering a large investment in EcoSolutions.", createdAt: "2025-05-30T16:50:00Z", isRead: false },
+  { id: "msg-6", conversationId: "conv-2", senderId: "user-3", receiverId: "user-1", content: "Amina, we're considering a large investment in tamweeli.", createdAt: "2025-05-30T16:50:00Z", isRead: false },
   { id: "msg-7", conversationId: "conv-2", senderId: "user-1", receiverId: "user-3", content: "That's exciting! What's the proposed amount?", createdAt: "2025-05-30T16:55:00Z", isRead: true },
   { id: "msg-8", conversationId: "conv-2", senderId: "user-3", receiverId: "user-1", content: "Around 100,000 DZD. Thoughts?", createdAt: "2025-05-30T17:12:00Z", isRead: false },
   { id: "msg-9", conversationId: "conv-3", senderId: "user-1", receiverId: "user-4", content: "Hi Fatima, any updates on your investment?", createdAt: "2025-05-29T14:20:00Z", isRead: true },
   { id: "msg-10", conversationId: "conv-3", senderId: "user-4", receiverId: "user-1", content: "Just finalized it! 50,000 DZD committed.", createdAt: "2025-05-29T14:30:00Z", isRead: true },
-  { id: "msg-11", conversationId: "conv-4", senderId: "user-5", receiverId: "user-1", content: "We reviewed EcoSolutions. Need more data.", createdAt: "2025-05-27T09:00:00Z", isRead: true },
+  { id: "msg-11", conversationId: "conv-4", senderId: "user-5", receiverId: "user-1", content: "We reviewed tamweeli. Need more data.", createdAt: "2025-05-27T09:00:00Z", isRead: true },
   { id: "msg-12", conversationId: "conv-4", senderId: "user-1", receiverId: "user-5", content: "I'll send the financial report.", createdAt: "2025-05-27T09:15:00Z", isRead: true },
-  { id: "msg-13", conversationId: "conv-5", senderId: "user-6", receiverId: "user-1", content: "Amina, is EcoSolutions still open for investment?", createdAt: "2025-05-25T16:30:00Z", isRead: true },
+  { id: "msg-13", conversationId: "conv-5", senderId: "user-6", receiverId: "user-1", content: "Amina, is tamweeli still open for investment?", createdAt: "2025-05-25T16:30:00Z", isRead: true },
   { id: "msg-14", conversationId: "conv-5", senderId: "user-1", receiverId: "user-6", content: "Yes, Sami, we’re at 87% funding!", createdAt: "2025-05-25T16:45:00Z", isRead: true },
   { id: "msg-15", conversationId: "conv-5", senderId: "user-6", receiverId: "user-1", content: "Awesome, I’ll review the docs.", createdAt: "2025-05-25T16:50:00Z", isRead: true },
 ]

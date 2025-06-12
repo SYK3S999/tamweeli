@@ -75,7 +75,7 @@ const formSchema = z.object({
 const mockUser = {
   id: "user-123",
   name: "Ahmed Benali",
-  email: "ahmed@ecosolutions.dz",
+  email: "ahmed@tamweeli.dz",
 }
 
 // Dynamic import to disable SSR

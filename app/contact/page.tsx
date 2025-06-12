@@ -177,7 +177,7 @@ export default function ContactPage() {
                             icon: Mail,
                             label: t("contact.email"),
                             tooltip: t("contact.emailTooltip"),
-                            content: ["contact@ecosolutions.dz"],
+                            content: ["contact@tamweeli.dz"],
                           },
                         ].map((item, index) => (
                           <motion.div

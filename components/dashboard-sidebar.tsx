@@ -20,6 +20,7 @@ import {
   CreditCard,
   LineChart,
   Shield,
+  Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/components/language-provider"
@@ -56,25 +57,31 @@ export function DashboardSidebar({ userType }: { userType: UserType }) {
 
   // Project Owner Links
   const projectOwnerLinks = [
-    { href: "/dashboard", icon: LayoutDashboard, label: t("dashboard.overview") },
-    { href: "/dashboard/projects", icon: Building, label: t("dashboard.myProjects") },
+    { href: "/dashboard", icon: LayoutDashboard, label: t("dashboard.myProjects") },
+    // { href: "/dashboard/projects", icon: Building, label: t("dashboard.myProjects") },
     { href: "/dashboard/add-project", icon: PlusCircle, label: t("dashboard.addProject") },
     { href: "/dashboard/requests", icon: Inbox, label: t("dashboard.requests") },
     { href: "/dashboard/services", icon: ShoppingBag, label: t("dashboard.services") },
     { href: "/dashboard/messages", icon: MessageSquare, label: t("dashboard.messages") },
     { href: "/dashboard/wallet", icon: Wallet, label: t("dashboard.wallet") },
+    { href: "/dashboard/notificationss", icon: Bell, label: t("dashboard.notifications") },
+    // reports
+    { href: "/dashboard/reportss", icon: FileText, label: t("dashboard.reports") },
     { href: "/dashboard/settings", icon: Settings, label: t("dashboard.settings") },
   ]
 
   // Investor Links
   const investorLinks = [
-    { href: "/dashboard", icon: LayoutDashboard, label: t("dashboard.overview") },
+    { href: "/dashboard/investments", icon: LayoutDashboard, label: t("dashboard.myInvestments") },
     { href: "/dashboard/projects", icon: Building, label: t("nav.projects") },
-    { href: "/dashboard/investments", icon: CreditCard, label: t("dashboard.myInvestments") },
+    // { href: "/dashboard/investments", icon: CreditCard, label: t("dashboard.myInvestments") },
     { href: "/dashboard/earnings", icon: LineChart, label: t("dashboard.earnings") },
     { href: "/dashboard/services", icon: ShoppingBag, label: t("dashboard.services") },
     { href: "/dashboard/messages", icon: MessageSquare, label: t("dashboard.messages") },
     { href: "/dashboard/wallet", icon: Wallet, label: t("dashboard.wallet") },
+    { href: "/dashboard/notifications", icon: Bell, label: t("dashboard.notifications") },
+    // reports
+    { href: "/dashboard/reportss", icon: FileText, label: t("dashboard.reports") },
     { href: "/dashboard/settings", icon: Settings, label: t("dashboard.settings") },
   ]
 

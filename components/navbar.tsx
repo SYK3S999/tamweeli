@@ -87,6 +87,8 @@ export function Navbar({ className }: NavbarProps) {
     { name: t("nav.projects"), href: "/projects", icon: FolderOpen },
     { name: t("nav.about"), href: "/about", icon: Info },
     { name: t("nav.contact"), href: "/contact", icon: Sparkles },
+    // adding blog
+    { name: t("nav.blog"), href: "/blog", icon: FolderOpen }, // You can use BookOpen for a blog
   ]
 
   const authItems = isAuthenticated
@@ -123,38 +125,69 @@ export function Navbar({ className }: NavbarProps) {
             {/* Enhanced Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 group",
-                      "hover:bg-accent/50 hover:text-primary",
-                      isActive(item.href) 
-                        ? "text-primary bg-primary/10 shadow-sm" 
-                        : "text-muted-foreground hover:bg-accent-foreground"
-                    )}
-                    onMouseEnter={() => setHoveredItem(item.href)}
-                    onMouseLeave={() => setHoveredItem(null)}
-                  >
-                    <Icon className={cn(
-                      "h-4 w-4 transition-all duration-300",
-                      isActive(item.href) && "text-primary",
-                      hoveredItem === item.href && "scale-110"
-                    )} />
-                    <span>{item.name}</span>
-                    
-                    {/* Enhanced active indicator */}
-                    <span
-                      className={cn(
-                        "absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-300",
-                        isActive(item.href) ? "w-8" : "group-hover:w-6"
-                      )}
-                    />
-                  </Link>
-                )
+              const Icon = item.icon
+              return (
+                <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 group",
+                  "hover:bg-accent/50 hover:text-primary",
+                  isActive(item.href) 
+                  ? "text-primary bg-primary/10 shadow-sm" 
+                  : "text-muted-foreground hover:bg-accent-foreground"
+                )}
+                onMouseEnter={() => setHoveredItem(item.href)}
+                onMouseLeave={() => setHoveredItem(null)}
+                >
+                <Icon className={cn(
+                  "h-4 w-4 transition-all duration-300",
+                  isActive(item.href) && "text-primary",
+                  hoveredItem === item.href && "scale-110"
+                )} />
+                <span>{item.name}</span>
+                
+                {/* Enhanced active indicator */}
+                <span
+                  className={cn(
+                  "absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-300",
+                  isActive(item.href) ? "w-8" : "group-hover:w-6"
+                  )}
+                />
+                </Link>
+              )
               })}
+
+                {/* Notifications Button (only if authenticated) */}
+                {isAuthenticated && (
+                <Link href="/dashboard/notificationss" aria-label="Notifications">
+                  <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative ml-2 hover:bg-accent/50 rounded-full transition-all duration-300"
+                  >
+                  {/* You can replace with your own notification icon */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-muted-foreground"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                    />
+                  </svg>
+                  {/* Notification badge example */}
+                  <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                    3
+                  </span>
+                  </Button>
+                </Link>
+                )}
 
               {/* Enhanced Auth Section */}
               <div className="flex items-center gap-3 ml-6 pl-6 border-l border-border">

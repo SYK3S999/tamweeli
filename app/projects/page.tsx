@@ -42,7 +42,7 @@ const cardHover = {
 const mockProjects = [
   {
     id: "proj-1",
-    name: "EcoSolutions Water Purification",
+    name: "tamweeli Water Purification",
     description: "Revolutionary nano-filtration technology bringing clean water to 10M+ people in rural areas across Africa and Asia.",
     sector: "healthcare",
     contractType: "murabaha",
@@ -834,11 +834,11 @@ function ProjectsPageContent() {
         >
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t("nav.projects")}</h1>
           <p className="text-gray-600 dark:text-gray-300">{t("projects.browseDescription")}</p>
-          {isAuthenticated && (
+            {isAuthenticated && user?.userType === "project-owner" && (
             <Button asChild className="bg-green-600 hover:bg-green-700">
               <Link href="/projects/create">{t("project.create")}</Link>
             </Button>
-          )}
+            )}
         </motion.div>
 
         {/* Featured Projects */}

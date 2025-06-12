@@ -64,7 +64,7 @@ const mockUser: User = {
 }
 
 const mockProjects: Project[] = [
-  { id: "proj-1", ownerId: "user-123", name: "EcoSolutions Solar Farm" },
+  { id: "proj-1", ownerId: "user-123", name: "tamweeli Solar Farm" },
   { id: "proj-2", ownerId: "user-456", name: "Halal Food Delivery" },
 ]
 
@@ -94,7 +94,7 @@ const mockConsultingRequests: ConsultingRequest[] = [
     id: "cons-1",
     clientName: "Ahmed Al-Farsi",
     projectId: "proj-1",
-    projectName: "EcoSolutions Solar Farm",
+    projectName: "tamweeli Solar Farm",
     type: "Financial Consulting",
     status: "pending",
   },
@@ -110,7 +110,7 @@ const mockConsultingRequests: ConsultingRequest[] = [
     id: "cons-3",
     clientName: "Mohammed Al-Qasimi",
     projectId: "proj-1",
-    projectName: "EcoSolutions Solar Farm",
+    projectName: "tamweeli Solar Farm",
     type: "Islamic Finance Consulting",
     status: "in-progress",
     startedAt: "2025-05-20",

@@ -6,7 +6,7 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/components/auth-provider"
 import { useLanguage } from "@/components/language-provider"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -15,15 +15,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import {
   CheckCircle,
@@ -40,28 +39,89 @@ import {
   Share2,
   ChevronLeft,
   MapPin,
+  FileUp,
+  ArrowRight,
+  Loader2,
 } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, cn } from "@/lib/utils"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 import { Skeleton } from "@/components/ui/skeleton"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
 
 // Framer Motion variants
 const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+  hidden: { opacity: 0, y: 60 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] } },
 }
 const staggerContainer = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
+  visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.2 } },
 }
 const cardHover = {
-  hover: { scale: 1.02, boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)", transition: { duration: 0.3 } },
+  hover: { scale: 1.02, transition: { duration: 0.3 } },
+}
+
+// Investment form schema
+const investmentSchema = z.object({
+  amount: z.string().refine((val) => !isNaN(Number.parseFloat(val)) && Number.parseFloat(val) > 0, {
+    message: "Please enter a valid amount greater than 0",
+  }),
+  bankAccount: z.string().min(10, "Bank account number must be at least 10 characters"),
+  transferCode: z.string().min(6, "Transfer code must be at least 6 characters"),
+  receipt: z.instanceof(File, { message: "Please upload a PDF receipt" }),
+})
+
+interface Project extends Record<string, any> {
+  id: string
+  title: string
+  description: string
+  sector: string
+  status: string
+  fundingGoal: number
+  fundingRaised: number
+  contractType: string
+  expectedReturn: number
+  duration: number
+  riskLevel: string
+  createdAt: string
+  endDate: string
+  ownerId: string
+  image?: string
+  images?: string[]
+  tags: string[]
+  milestones?: { id: string; title: string; status: string; description: string; dueDate: string }[]
+  location: string
+  documents?: { id: string; title: string; url: string; createdAt: string }[]
+  updates?: { id: string; title: string; content: string; createdAt: string }[]
+}
+
+interface Investment {
+  id: string
+  investorId: string
+  projectId: string
+  amount: number
+  status: string
+  expectedReturn: number
+  returnDate: string
+  createdAt: string
+  contractSigned: boolean
+  bankAccount?: string
+  transferCode?: string
+  receipt?: string
+}
+
+interface Investor {
+  id: string
+  name: string
+  investorType: "individual" | "institution"
 }
 
 // Mock data
 const mockProject: Project = {
   id: "proj-1",
-  title: "EcoSolutions Water Purification",
+  title: "tamweeli Water Purification",
   description: "Revolutionary nano-filtration technology bringing clean water to 10M+ people in rural areas across Africa and Asia.",
   sector: "healthcare",
   status: "approved",
@@ -109,49 +169,6 @@ const mockInvestors: Investor[] = [
 
 const mockSavedProjects = ["proj-1", "proj-3", "proj-5"]
 
-interface Project extends Record<string, any> {
-  id: string
-  title: string
-  description: string
-  sector: string
-  status: string
-  fundingGoal: number
-  fundingRaised: number
-  contractType: string
-  expectedReturn: number
-  duration: number
-  riskLevel: string
-  createdAt: string
-  endDate: string
-  ownerId: string
-  image?: string
-  images?: string[]
-  tags: string[]
-  milestones?: { id: string; title: string; status: string; description: string; dueDate: string }[]
-  location: string
-  documents?: { id: string; title: string; url: string; createdAt: string }[]
-  updates?: { id: string; title: string; content: string; createdAt: string }[]
-}
-
-interface Investment {
-  id: string
-  investorId: string
-  projectId: string
-  amount: number
-  status: string
-  expectedReturn: number
-  returnDate: string
-  createdAt: string
-  contractSigned: boolean
-  note?: string
-}
-
-interface Investor {
-  id: string
-  name: string
-  investorType: "individual" | "institution"
-}
-
 export default function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -162,11 +179,19 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null)
   const [investments, setInvestments] = useState<Investment[]>([])
   const [investors, setInvestors] = useState<Investor[]>([])
-  const [investmentAmount, setInvestmentAmount] = useState("")
-  const [investmentNote, setInvestmentNote] = useState("")
   const [isInvestDialogOpen, setIsInvestDialogOpen] = useState(false)
   const [isSaved, setIsSaved] = useState(mockSavedProjects.includes(params.id as string))
   const [isLoading, setIsLoading] = useState(true)
+
+  // Investment form setup
+  const form = useForm<z.infer<typeof investmentSchema>>({
+    resolver: zodResolver(investmentSchema),
+    defaultValues: {
+      amount: "",
+      bankAccount: "",
+      transferCode: "",
+    },
+  })
 
   useEffect(() => {
     if (!params.id) {
@@ -174,7 +199,7 @@ export default function ProjectDetailPage() {
       return
     }
 
-    // Simulate API fetch with mock data
+    // Simulate API fetch
     setTimeout(() => {
       setProject(mockProject)
       setInvestments(mockInvestments)
@@ -183,26 +208,18 @@ export default function ProjectDetailPage() {
     }, 1000)
   }, [params.id, router])
 
-  const handleInvest = () => {
-    if (!investmentAmount || isNaN(Number.parseFloat(investmentAmount)) || Number.parseFloat(investmentAmount) <= 0) {
-      toast({
-        title: t("invalidAmount"),
-        description: t("validAmount"),
-        variant: "destructive",
-      })
-      return
-    }
-
+  const handleInvest = async (values: z.infer<typeof investmentSchema>) => {
     if (!user || !project) {
       toast({
         title: t("error"),
         description: t("missingInfo"),
         variant: "destructive",
+        className: "bg-background/95 border-primary/20",
       })
       return
     }
 
-    const amount = Number.parseFloat(investmentAmount)
+    const amount = Number.parseFloat(values.amount)
     const newInvestment: Investment = {
       id: `inv-${Date.now()}`,
       investorId: user.id,
@@ -213,7 +230,9 @@ export default function ProjectDetailPage() {
       returnDate: new Date(new Date().setMonth(new Date().getMonth() + project.duration)).toISOString(),
       createdAt: new Date().toISOString(),
       contractSigned: false,
-      note: investmentNote || undefined,
+      bankAccount: values.bankAccount,
+      transferCode: values.transferCode,
+      receipt: values.receipt.name,
     }
 
     setInvestments((prev) => [...prev, newInvestment])
@@ -222,19 +241,20 @@ export default function ProjectDetailPage() {
     toast({
       title: t("investmentSubmitted"),
       description: t("investmentPending"),
+      className: "bg-background/95 border-primary",
     })
 
     setIsInvestDialogOpen(false)
-    setInvestmentAmount("")
-    setInvestmentNote("")
+    form.reset()
   }
 
   const handleApproveProject = () => {
     if (project) {
       setProject({ ...project, status: "approved" })
       toast({
-        title: t("projectApproved"),
-        description: t("projectApprovedDesc"),
+        title: t("project-status-updated"),
+        description: t("project-approved"),
+        className: "bg-background/95 border-primary",
       })
     }
   }
@@ -243,8 +263,9 @@ export default function ProjectDetailPage() {
     if (project) {
       setProject({ ...project, status: "rejected" })
       toast({
-        title: t("projectRejected"),
-        description: t("projectRejectedDesc"),
+        title: t("project-status-updated"),
+        description: t("project-rejected"),
+        className: "bg-background/95 border-primary",
       })
     }
   }
@@ -256,7 +277,8 @@ export default function ProjectDetailPage() {
       toast({
         title: t("authRequired"),
         description: t("loginToSave"),
-        action: <Link href="/auth/login" className="text-green-600 underline">{t("login")}</Link>,
+        action: <Link href="/auth/login" className="text-primary underline">{t("login")}</Link>,
+        className: "bg-background/95 border-primary",
       })
       return
     }
@@ -264,6 +286,7 @@ export default function ProjectDetailPage() {
     toast({
       title: isSaved ? t("projectUnsaved") : t("projectSaved"),
       description: isSaved ? t("projectUnsavedDesc") : t("projectSavedDesc"),
+      className: "bg-background/95 border-primary",
     })
   }
 
@@ -272,6 +295,7 @@ export default function ProjectDetailPage() {
     toast({
       title: t("linkCopied"),
       description: t("linkCopiedDesc"),
+      className: "bg-background/95 border-primary",
     })
   }
 
@@ -288,24 +312,20 @@ export default function ProjectDetailPage() {
       case "pending":
         return <Badge className="bg-yellow-100 text-yellow-800"><AlertCircle className="h-3 w-3 mr-1" /> {t("pending")}</Badge>
       case "approved":
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> {t("approved")}</Badge>
+        return <Badge className="bg-primary/10 text-primary"><CheckCircle className="h-3 w-3 mr-1" /> {t("approved")}</Badge>
       case "rejected":
         return <Badge className="bg-red-100 text-red-800"><XCircle className="h-3 w-3 mr-1" /> {t("rejected")}</Badge>
       case "funded":
         return <Badge className="bg-blue-100 text-blue-800"><Landmark className="h-3 w-3 mr-1" /> {t("funded")}</Badge>
       case "completed":
-        return <Badge className="bg-green-600 text-white"><CheckCircle className="h-3 w-3 mr-1" /> {t("completed")}</Badge>
+        return <Badge className="bg-primary text-white"><CheckCircle className="h-3 w-3 mr-1" /> {t("completed")}</Badge>
       default:
         return <Badge className="bg-gray-100 text-gray-800">{t(status)}</Badge>
     }
   }
 
   if (!project || isLoading) {
-    return (
-      <div className="container mx-auto p-6">
-        <SkeletonLoader />
-      </div>
-    )
+    return <SkeletonLoader />
   }
 
   const fundingProgress = (project.fundingRaised / project.fundingGoal) * 100
@@ -315,409 +335,560 @@ export default function ProjectDetailPage() {
   const canInvest = isInvestor && project.status === "approved"
 
   return (
-    <div className={`container mx-auto p-6 ${isRtl ? "rtl" : "ltr"}`}>
-      {/* Sticky Header */}
-      <motion.div
-        className="sticky top-0 z-10 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm mb-6"
-        initial="hidden"
-        animate="visible"
-        variants={fadeInUp}
-      >
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" asChild className="p-2">
-              <Link href="/dashboard/projects"><ChevronLeft className="h-5 w-5" /></Link>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-                {project.title}
-              </h1>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge className="bg-green-100 text-green-800">{project.sector}</Badge>
-                {getStatusBadge(project.status)}
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleSaveProject}
-              aria-label={isSaved ? t("unsave") : t("save")}
+    <div className="flex min-h-screen flex-col">
+      <main className="flex-1 relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-secondary/20 dark:from-primary/30 dark:via-background dark:to-secondary/30"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.15)_1px,transparent_1px)] bg-[length:30px_30px] opacity-20"></div>
+        <div className="absolute top-20 left-10 w-80 h-80 bg-primary/20 rounded-full animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/20 rounded-full animate-pulse delay-1000"></div>
+
+        <section className="py-12 md:py-16 relative z-10">
+          <div className="container px-4 md:px-6">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="space-y-8"
             >
-              <Bookmark className={`h-5 w-5 ${isSaved ? "fill-green-600 text-green-600" : "text-gray-600 dark:text-gray-400"}`} />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleShare} aria-label={t("share")}>
-              <Share2 className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-            </Button>
-            {isAdmin && project.status === "pending" && (
-              <>
-                <Button variant="destructive" onClick={handleRejectProject}>{t("reject")}</Button>
-                <Button className="bg-green-600 hover:bg-green-700" onClick={handleApproveProject}>{t("approve")}</Button>
-              </>
-            )}
-            {canInvest && (
-              <Dialog open={isInvestDialogOpen} onOpenChange={setIsInvestDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-green-600 hover:bg-green-700">{t("investNow")}</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>{t("investIn")} {project.title}</DialogTitle>
-                    <DialogDescription>{t("investDescription")}</DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="amount">{t("investmentAmount")}</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        value={investmentAmount}
-                        onChange={(e) => setInvestmentAmount(e.target.value)}
-                        placeholder="100000"
-                        min="1000"
-                        className="border-green-600/30 focus:ring-green-600"
-                      />
+              {/* Sticky Header */}
+              <motion.div
+                className="sticky top-0 z-10 backdrop-blur-xl bg-background/95 border border-primary/20 rounded-3xl p-6 shadow-2xl"
+                variants={fadeInUp}
+              >
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <Button variant="ghost" asChild className="p-2">
+                      <Link href="/dashboard/projects"><ChevronLeft className="h-5 w-5 text-muted-foreground" /></Link>
+                    </Button>
+                    <div>
+                      <h1 className="text-3xl md:text-4xl font-semibold text-primary">{project.title}</h1>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge className="bg-primary/10 text-primary">{project.sector}</Badge>
+                        {getStatusBadge(project.status)}
+                      </div>
                     </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="note">{t("noteOptional")}</Label>
-                      <Textarea
-                        id="note"
-                        value={investmentNote}
-                        onChange={(e) => setInvestmentNote(e.target.value)}
-                        placeholder={t("notePlaceholder")}
-                        className="border-green-600/30 focus:ring-green-600"
-                      />
-                    </div>
-                    {investmentAmount && !isNaN(Number.parseFloat(investmentAmount)) && Number.parseFloat(investmentAmount) > 0 && (
-                      <motion.div
-                        initial="hidden"
-                        animate="visible"
-                        variants={fadeInUp}
-                        className="bg-green-50 dark:bg-green-900/20 p-4 rounded-md"
-                      >
-                        <h4 className="font-medium mb-2">{t("investmentSummary")}</h4>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <span>{t("amount")}</span>
-                          <span className="font-medium">{formatCurrency(Number.parseFloat(investmentAmount))}</span>
-                          <span>{t("expectedReturn")}</span>
-                          <span className="font-medium">{formatCurrency((Number.parseFloat(investmentAmount) * project.expectedReturn) / 100)}</span>
-                          <span>{t("returnRate")}</span>
-                          <span className="font-medium">{project.expectedReturn}%</span>
-                          <span>{t("duration")}</span>
-                          <span className="font-medium">{project.duration} {t("months")}</span>
-                        </div>
-                      </motion.div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={toggleSaveProject}
+                      aria-label={isSaved ? t("unsave") : t("save")}
+                    >
+                      <Bookmark className={`h-5 w-5 ${isSaved ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleShare} aria-label={t("share")}>
+                      <Share2 className="h-5 w-5 text-muted-foreground" />
+                    </Button>
+                    {isAdmin && project.status === "pending" && (
+                      <>
+                        <Button variant="destructive" onClick={handleRejectProject}>{t("reject")}</Button>
+                        <Button className="bg-primary hover:bg-primary/90 rounded-full px-6" onClick={handleApproveProject}>{t("approve")}</Button>
+                      </>
+                    )}
+                    {canInvest && (
+                      <>
+                        <Dialog open={isInvestDialogOpen} onOpenChange={setIsInvestDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button className="bg-primary hover:bg-primary/90 rounded-full px-6">{t("investNow")}</Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[500px] backdrop-blur-xl bg-background/95 border-primary/20 rounded-3xl">
+                            <DialogHeader>
+                              <DialogTitle className="text-2xl text-primary">{t("investIn")} {project.title}</DialogTitle>
+                              <DialogDescription className="text-muted-foreground">{t("investDescription")}</DialogDescription>
+                            </DialogHeader>
+                            <Form {...form}>
+                              <form onSubmit={form.handleSubmit(handleInvest)} className="space-y-4">
+                                <FormField
+                                  control={form.control}
+                                  name="amount"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-sm font-medium text-foreground">{t("investmentAmount")}</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          placeholder={t("investmentAmountPlaceholder")}
+                                          className="pl-4 pr-4 py-4 border-primary/20 rounded-xl focus:border-primary hover:bg-primary/10 transition-all duration-300"
+                                          {...field}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name="bankAccount"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-sm font-medium text-foreground">{t("bankAccount")}</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          placeholder={t("bankAccountPlaceholder")}
+                                          className="pl-4 pr-4 py-4 border-primary/20 rounded-xl focus:border-primary hover:bg-primary/10 transition-all duration-300"
+                                          {...field}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name="transferCode"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-sm font-medium text-foreground">{t("transferCode")}</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          placeholder={t("transferCodePlaceholder")}
+                                          className="pl-4 pr-4 py-4 border-primary/20 rounded-xl focus:border-primary hover:bg-primary/10 transition-all duration-300"
+                                          {...field}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name="receipt"
+                                  render={({ field: { onChange, value, ...field } }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-sm font-medium text-foreground">{t("receipt")}</FormLabel>
+                                      <FormControl>
+                                        <div className="flex items-center justify-center w-full">
+                                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer bg-background/95 hover:bg-primary/10 border-primary/20 transition-all duration-300">
+                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                              <FileUp className="w-8 h-8 mb-2 text-muted-foreground group-hover:text-primary" />
+                                              <p className="text-sm text-muted-foreground">
+                                                {value ? value.name : t("uploadReceiptPlaceholder")}
+                                              </p>
+                                            </div>
+                                            <Input
+                                              type="file"
+                                              className="hidden"
+                                              accept=".pdf"
+                                              onChange={(e) => {
+                                                const file = e.target.files?.[0]
+                                                if (file) onChange(file)
+                                              }}
+                                              {...field}
+                                            />
+                                          </label>
+                                        </div>
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                {form.watch("amount") && !isNaN(Number.parseFloat(form.watch("amount"))) && Number.parseFloat(form.watch("amount")) > 0 && (
+                                  <motion.div
+                                    initial="hidden"
+                                    animate="visible"
+                                    variants={fadeInUp}
+                                    className="bg-primary/5 p-4 rounded-xl border-primary/20"
+                                  >
+                                    <h4 className="font-medium mb-2 text-primary">{t("investmentSummary")}</h4>
+                                    <div className="grid grid-cols-2 gap-2 text-sm text-foreground">
+                                      <span>{t("amount")}</span>
+                                      <span className="font-medium">{formatCurrency(Number.parseFloat(form.watch("amount")))}</span>
+                                      <span>{t("expectedReturn")}</span>
+                                      <span className="font-medium">{formatCurrency((Number.parseFloat(form.watch("amount")) * project.expectedReturn) / 100)}</span>
+                                      <span>{t("returnRate")}</span>
+                                      <span className="font-medium">{project.expectedReturn}%</span>
+                                      <span>{t("duration")}</span>
+                                      <span className="font-medium">{project.duration} {t("months")}</span>
+                                    </div>
+                                  </motion.div>
+                                )}
+                                <DialogFooter>
+                                  <Button variant="outline" onClick={() => setIsInvestDialogOpen(false)} className="border-primary/20 hover:bg-primary/10 rounded-xl">
+                                    {t("cancel")}
+                                  </Button>
+                                  <Button
+                                    type="submit"
+                                    className="bg-primary hover:bg-primary/90 rounded-xl px-6"
+                                    disabled={form.formState.isSubmitting}
+                                  >
+                                    {form.formState.isSubmitting ? (
+                                      <>
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                        {t("common.loading")}
+                                      </>
+                                    ) : (
+                                      <span className="flex items-center gap-3">
+                                        {t("submitInvestment")}
+                                        <ArrowRight className={cn("h-5 w-5", isRtl && "rotate-180")} />
+                                      </span>
+                                    )}
+                                  </Button>
+                                </DialogFooter>
+                              </form>
+                            </Form>
+                          </DialogContent>
+                        </Dialog>
+                        <Button asChild className="bg-background/95 hover:bg-primary/10 border-primary/20 rounded-full px-6">
+                          <Link href="/dashboard/messages">{t("message")}</Link>
+                        </Button>
+                      </>
                     )}
                   </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsInvestDialogOpen(false)}>{t("cancel")}</Button>
-                    <Button className="bg-green-600 hover:bg-green-700" onClick={handleInvest}>{t("submitInvestment")}</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-        </div>
-      </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <motion.div className="lg:col-span-2 space-y-6" variants={staggerContainer} initial="hidden" animate="visible">
-          {/* Project Overview */}
-          <Card className="bg-white dark:bg-gray-800 shadow-sm">
-            <CardHeader>
-              <CardTitle>{t("overview")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Carousel className="mb-6">
-                <CarouselContent>
-                  {project.images?.map((img, i) => (
-                    <CarouselItem key={i}>
-                      <img src={img} alt={`${project.title} ${i + 1}`} className="w-full h-64 object-cover rounded-md" />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="left-2" />
-                <CarouselNext className="right-2" />
-              </Carousel>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">{t("description")}</h3>
-                  <p className="text-gray-600 dark:text-gray-300">{project.description}</p>
                 </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2">{t("tags")}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {project.tags.map((tag) => (
-                      <Badge key={tag} className="bg-green-100 text-green-800">{tag}</Badge>
-                    ))}
-                  </div>
-                </div>
-                {project.milestones && (
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">{t("milestones")}</h3>
-                    <div className="relative pl-6 space-y-6">
-                      {project.milestones.map((milestone, i) => (
-                        <div key={milestone.id} className="relative">
-                          <div className={`absolute left-0 w-4 h-4 rounded-full ${milestone.status === "completed" ? "bg-green-600" : milestone.status === "in-progress" ? "bg-yellow-500" : "bg-gray-300"}`} />
-                          {i < project.milestones!.length - 1 && <div className="absolute left-[7px] top-4 w-0.5 h-full bg-gray-200" />}
-                          <div className="ml-8">
-                            <div className="flex justify-between items-center">
-                              <h4 className="font-medium">{milestone.title}</h4>
-                              <Badge
-                                className={
-                                  milestone.status === "completed"
-                                    ? "bg-green-100 text-green-800"
-                                    : milestone.status === "in-progress"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : "bg-gray-100 text-gray-800"
-                                }
-                              >
-                                {t(milestone.status)}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{milestone.description}</p>
-                            <p className="text-sm text-gray-500">{t("dueDate")}: {formatDate(milestone.dueDate)}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              </motion.div>
 
-          {/* Tabs */}
-          <Tabs defaultValue="investments" className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-            <TabsList className="bg-gray-100 dark:bg-gray-700 rounded-t-lg">
-              <TabsTrigger value="investments" className="flex items-center gap-2">
-                <Landmark className="h-4 w-4" /> {t("investments")} <Badge className="ml-2 bg-green-100 text-green-800">{investments.length}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="investors" className="flex items-center gap-2">
-                <Users className="h-4 w-4" /> {t("investors")} <Badge className="ml-2 bg-green-100 text-green-800">{investors.length}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="documents" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" /> {t("documents")} <Badge className="ml-2 bg-green-100 text-green-800">{project.documents?.length || 0}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="updates" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" /> {t("updates")} <Badge className="ml-2 bg-green-100 text-green-800">{project.updates?.length || 0}</Badge>
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="investments" className="p-6">
-              {investments.length === 0 ? (
-                <div className="text-center py-6 text-gray-600 dark:text-gray-400">{t("noInvestments")}</div>
-              ) : (
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
-                  {investments.map((investment) => (
-                    <motion.div key={investment.id} variants={fadeInUp} className="border rounded-md p-4 bg-white dark:bg-gray-800">
-                      <div className="flex justify-between items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+                {/* Main Content */}
+                <motion.div className="lg:col-span-2 space-y-6" variants={staggerContainer}>
+                  {/* Project Overview */}
+                  <Card className="backdrop-blur-xl bg-background/95 border-primary/20 rounded-3xl shadow-2xl">
+                    <motion.div variants={fadeInUp} className="p-6">
+                      <h2 className="text-2xl font-semibold text-primary mb-4">{t("overview")}</h2>
+                      <Carousel className="mb-6">
+                        <CarouselContent>
+                          {project.images?.map((img, i) => (
+                            <CarouselItem key={i}>
+                              <img src={img} alt={`${project.title} ${i + 1}`} className="w-full h-64 object-cover rounded-xl" />
+                            </CarouselItem>
+                          ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="left-2 bg-background/95 border-primary/20" />
+                        <CarouselNext className="right-2 bg-background/95 border-primary/20" />
+                      </Carousel>
+                      <div className="space-y-4">
                         <div>
-                          <div className="font-medium">{formatCurrency(investment.amount)}</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">{t("expectedReturn")}: {formatCurrency(investment.expectedReturn)}</div>
+                          <h3 className="text-lg font-medium text-foreground mb-2">{t("description")}</h3>
+                          <p className="text-muted-foreground">{project.description}</p>
                         </div>
-                        {getStatusBadge(investment.status)}
-                      </div>
-                      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        <span>{t("date")}: {formatDate(investment.createdAt)}</span> | <span>{t("returnDate")}: {formatDate(investment.returnDate)}</span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </TabsContent>
-            <TabsContent value="investors" className="p-6">
-              {investors.length === 0 ? (
-                <div className="text-center py-6 text-gray-600 dark:text-gray-400">{t("noInvestors")}</div>
-              ) : (
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
-                  {investors.map((investor) => (
-                    <motion.div key={investor.id} variants={{ ...fadeInUp, ...cardHover }} whileHover="hover" className="border rounded-md p-4 bg-white dark:bg-gray-800">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center">
-                            {(investor.name || "").substring(0, 2).toUpperCase()}
+                        <div>
+                          <h3 className="text-lg font-medium text-foreground mb-2">{t("tags")}</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {project.tags.map((tag) => (
+                              <Badge key={tag} className="bg-primary/10 text-primary">{tag}</Badge>
+                            ))}
                           </div>
+                        </div>
+                        {project.milestones && (
                           <div>
-                            <div className="font-medium">{investor.name}</div>
-                            <div className="text-sm text-gray-600 dark:text-gray-400">{t(investor.investorType)}</div>
+                            <h3 className="text-lg font-medium text-foreground mb-4">{t("milestones")}</h3>
+                            <div className="relative pl-6 space-y-6">
+                              {project.milestones.map((milestone, i) => (
+                                <motion.div key={milestone.id} variants={fadeInUp} className="relative">
+                                  <div className={`absolute left-0 w-4 h-4 rounded-full ${milestone.status === "completed" ? "bg-primary" : milestone.status === "in-progress" ? "bg-yellow-500" : "bg-gray-300"}`} />
+                                  {i < project.milestones!.length - 1 && <div className="absolute left-[7px] top-4 w-0.5 h-full bg-primary/20" />}
+                                  <div className="ml-8">
+                                    <div className="flex justify-between items-center">
+                                      <h4 className="font-medium text-foreground">{milestone.title}</h4>
+                                      <Badge
+                                        className={
+                                          milestone.status === "completed"
+                                            ? "bg-primary/10 text-primary"
+                                            : milestone.status === "in-progress"
+                                              ? "bg-yellow-100 text-yellow-800"
+                                              : "bg-gray-100 text-gray-800"
+                                        }
+                                      >
+                                        {t(milestone.status)}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">{milestone.description}</p>
+                                    <p className="text-sm text-muted-foreground">{t("dueDate")}: {formatDate(milestone.dueDate)}</p>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  </Card>
+
+                  {/* Tabs */}
+                  <Card className="backdrop-blur-xl bg-background/95 border-primary/20 rounded-3xl shadow-2xl">
+                    <Tabs defaultValue="investments">
+                      <TabsList className="bg-primary/5 rounded-t-xl border-b border-primary/20">
+                        <TabsTrigger value="investments" className="flex items-center gap-2 text-foreground">
+                          <Landmark className="h-4 w-4" /> {t("investments")} <Badge className="ml-2 bg-primary/10 text-primary">{investments.length}</Badge>
+                        </TabsTrigger>
+                        <TabsTrigger value="investors" className="flex items-center gap-2 text-foreground">
+                          <Users className="h-4 w-4" /> {t("investors")} <Badge className="ml-2 bg-primary/10 text-primary">{investors.length}</Badge>
+                        </TabsTrigger>
+                        <TabsTrigger value="documents" className="flex items-center gap-2 text-foreground">
+                          <FileText className="h-4 w-4" /> {t("documents")} <Badge className="ml-2 bg-primary/10 text-primary">{project.documents?.length || 0}</Badge>
+                        </TabsTrigger>
+                        <TabsTrigger value="updates" className="flex items-center gap-2 text-foreground">
+                          <MessageSquare className="h-4 w-4" /> {t("updates")} <Badge className="ml-2 bg-primary/10 text-primary">{project.updates?.length || 0}</Badge>
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="investments" className="p-6">
+                        {investments.length === 0 ? (
+                          <div className="text-center py-6 text-muted-foreground">{t("noInvestments")}</div>
+                        ) : (
+                          <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
+                            {investments.map((investment) => (
+                              <motion.div
+                                key={investment.id}
+                                variants={{ ...fadeInUp, ...cardHover }}
+                                whileHover="hover"
+                                className="border border-primary/20 rounded-xl p-4 bg-background/95"
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="font-medium text-foreground">{formatCurrency(investment.amount)}</div>
+                                    <div className="text-sm text-muted-foreground">{t("expectedReturn")}: {formatCurrency(investment.expectedReturn)}</div>
+                                  </div>
+                                  {getStatusBadge(investment.status)}
+                                </div>
+                                <div className="mt-2 text-sm text-muted-foreground">
+                                  <span>{t("date")}: {formatDate(investment.createdAt)}</span> | <span>{t("returnDate")}: {formatDate(investment.returnDate)}</span>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        )}
+                      </TabsContent>
+                      <TabsContent value="investors" className="p-6">
+                        {investors.length === 0 ? (
+                          <div className="text-center py-6 text-muted-foreground">{t("noInvestors")}</div>
+                        ) : (
+                          <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
+                            {investors.map((investor) => (
+                              <motion.div
+                                key={investor.id}
+                                variants={{ ...fadeInUp, ...cardHover }}
+                                whileHover="hover"
+                                className="border border-primary/20 rounded-xl p-4 bg-background/95"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+                                      {(investor.name || "").substring(0, 2).toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-foreground">{investor.name}</div>
+                                      <div className="text-sm text-muted-foreground">{t(investor.investorType)}</div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-sm text-muted-foreground">{t("totalInvested")}</div>
+                                    <div className="font-medium text-foreground">
+                                      {formatCurrency(investments.filter((i) => i.investorId === investor.id && i.status === "approved").reduce((sum, i) => sum + i.amount, 0))}
+                                    </div>
+                                  </div>
+                                </div>
+                                <Progress
+                                  value={(investments.filter((i) => i.investorId === investor.id && i.status === "approved").reduce((sum, i) => sum + i.amount, 0) / project.fundingGoal) * 100}
+                                  className="h-1 mt-2 bg-primary/20"
+                                />
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        )}
+                      </TabsContent>
+                      <TabsContent value="documents" className="p-6">
+                        {project.documents?.length === 0 ? (
+                          <div className="text-center py-6 text-muted-foreground">{t("noDocuments")}</div>
+                        ) : (
+                          <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
+                            {project.documents?.map((doc) => (
+                              <motion.div
+                                key={doc.id}
+                                variants={{ ...fadeInUp, ...cardHover }}
+                                whileHover="hover"
+                                className="border border-primary/20 rounded-xl p-4 bg-white/95 backdrop-blur-sm"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="font-medium text-foreground">{doc.title}</div>
+                                    <div className="text-sm text-muted-foreground">{formatDate(doc.createdAt)}</div>
+                                  </div>
+                                  <Button variant="outline" asChild className="border-primary/20 hover:bg-primary/10 rounded-xl">
+                                    <a href={doc.url} target="_blank" rel="noopener noreferrer">{t("view")}</a>
+                                  </Button>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        )}
+                      </TabsContent>
+                      <TabsContent value="updates" className="p-6">
+                        {project.updates?.length === 0 ? (
+                          <div className="text-center py-6 text-muted-foreground">{t("noUpdates")}</div>
+                        ) : (
+                          <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
+                            {project.updates?.map((update) => (
+                              <motion.div
+                                key={update.id}
+                                variants={{ ...fadeInUp, ...cardHover }}
+                                whileHover="hover"
+                                className="border border-primary/20 rounded-xl p-4 bg-white/95 backdrop-blur-sm"
+                              >
+                                <div className="font-medium text-foreground">{update.title}</div>
+                                <div className="text-sm text-muted-foreground mt-1">{update.content}</div>
+                                <div className="text-sm text-muted-foreground mt-2">{formatDate(update.createdAt)}</div>
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        )}
+                      </TabsContent>
+                    </Tabs>
+                  </Card>
+                </motion.div>
+
+                {/* Sidebar */}
+                <motion.div className="space-y-6" variants={staggerContainer}>
+                  {/* Funding Progress */}
+                  <Card className="backdrop-blur-xl bg-background/95 border-primary/20 rounded-3xl shadow-2xl">
+                    <motion.div className="p-6" variants={fadeInUp}>
+                      <h2 className="text-2xl font-semibold text-primary mb-4">{t("fundingProgress")}</h2>
+                      <div className="space-y-4">
+                        <Progress
+                          value={fundingProgress}
+                          className="h-3 bg-primary/20 [&_div]:bg-primary"
+                        />
+                        <div className="flex justify-between text-sm text-foreground">
+                          <span>{formatCurrency(project.fundingRaised)}</span>
+                          <span className="font-medium">{Math.round(fundingProgress)}%</span>
+                          <span>{formatCurrency(project.fundingGoal)}</span>
+                        </div>
+                        <Separator className="bg-primary/20" />
+                        <div className="space-y-3 text-sm text-foreground">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">{t("contractType")}</span>
+                            <span className="font-medium">{project.contractType}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">{t("expectedReturn")}</span>
+                            <span className="font-medium">{project.expectedReturn}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">{t("duration")}</span>
+                            <span className="font-medium">{project.duration} {t("months")}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">{t("riskLevel")}</span>
+                            <span className="font-medium">{t(project.riskLevel)}</span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm text-gray-600 dark:text-gray-400">{t("totalInvested")}</div>
-                          <div className="font-medium">{formatCurrency(investments.filter((i) => i.investorId === investor.id && i.status === "approved").reduce((sum, i) => sum + i.amount, 0))}</div>
+                        <Separator className="bg-primary/20" />
+                        <div className="space-y-3 text-sm text-foreground">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span>{t("created")}: {formatDate(project.createdAt)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span>{t("endDate")}: {formatDate(project.endDate)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                            <span>{t("investors")}: {investors.length}</span>
+                          </div>
                         </div>
                       </div>
-                      <Progress
-                        value={(investments.filter((i) => i.investorId === investor.id && i.status === "approved").reduce((sum, i) => sum + i.amount, 0) / project.fundingGoal) * 100}
-                        className="h-1 mt-2"
-                      />
                     </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </TabsContent>
-            <TabsContent value="documents" className="p-6">
-              {project.documents?.length === 0 ? (
-                <div className="text-center py-6 text-gray-600 dark:text-gray-400">{t("noDocuments")}</div>
-              ) : (
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
-                  {project.documents?.map((doc) => (
-                    <motion.div key={doc.id} variants={{ ...fadeInUp, ...cardHover }} whileHover="hover" className="border rounded-md p-4 bg-white dark:bg-gray-800">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">{doc.title}</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">{formatDate(doc.createdAt)}</div>
-                        </div>
-                        <Button variant="outline" asChild className="border-green-600/30 hover:bg-green-100">
-                          <a href={doc.url} target="_blank" rel="noopener noreferrer">{t("view")}</a>
+                    {canInvest && (
+                      <motion.div className="p-6 pt-0" variants={fadeInUp}>
+                        <Button
+                          className="w-full bg-primary hover:bg-primary/90 rounded-full px-8 py-6 text-lg font-semibold"
+                          onClick={() => setIsInvestDialogOpen(true)}
+                        >
+                          <span className="flex items-center gap-3">
+                            {t("investNow")}
+                            <ArrowRight className={cn("h-5 w-5", isRtl && "rotate-180")} />
+                          </span>
                         </Button>
+                        <Button
+                          asChild
+                          className="w-full mt-2 bg-background/95 hover:bg-primary/10 border-primary/20 rounded-full px-8 py-6 text-lg font-semibold"
+                        >
+                          <Link href="/dashboard/messages">{t("message")}</Link>
+                        </Button>
+                      </motion.div>
+                    )}
+                  </Card>
+
+                  {/* Location */}
+                  <Card className="backdrop-blur-xl bg-background/95 border-primary/20 rounded-3xl shadow-2xl">
+                    <motion.div className="p-6" variants={fadeInUp}>
+                      <h2 className="text-2xl font-semibold text-primary mb-4">{t("location")}</h2>
+                      <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3151.835434509374!2d144.95373531531676!3d-37.81720997975159!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzfCsDUwJzAxLjkiUyAxNDTC2JzEzLjUz!5e0!3m2!1sen!2sus!4v1635781263211!5m2!1sen!2sus"
+                        className="w-full h-48 rounded-xl"
+                        allowFullScreen
+                        loading="lazy"
+                        title={t("locationMap")}
+                      />
+                      <div className="mt-2 text-sm text-center flex items-center justify-center gap-2 text-foreground">
+                        <MapPin className="h-4 w-4 text-primary" /> {project.location}
                       </div>
                     </motion.div>
-                  ))}
+                  </Card>
+                </motion.div>
+              </div>
+
+              {/* Sticky Mobile Footer */}
+              {canInvest && (
+                <motion.div
+                  className="fixed bottom-0 left-0 right-0 p-4 backdrop-blur-xl bg-background/95 border-t border-primary/20 shadow-t lg:hidden"
+                  initial={{ y: 100 }}
+                  animate={{ y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Button
+                    className="w-full bg-primary hover:bg-primary/90 rounded-full py-6 text-lg font-semibold"
+                    onClick={() => setIsInvestDialogOpen(true)}
+                  >
+                    <span className="flex items-center gap-3">
+                      {t("investNow")}
+                      <ArrowRight className={cn("arrow-right", "h-5 w-5", isRtl && "rotate-180")} />
+                    </span>
+                  </Button>
+                  <Button
+                    asChild
+                    className="w-full mt-6 bg-background/95 hover:bg-primary/10 border-primary/20 rounded-full py-6 text-lg font-semibold"
+                  >
+                    <Link href="/dashboard/messages">{t("message")}</Link>
+                  </Button>
                 </motion.div>
               )}
-            </TabsContent>
-            <TabsContent value="updates" className="p-6">
-              {project.updates?.length === 0 ? (
-                <div className="text-center py-6 text-gray-600 dark:text-gray-400">{t("noUpdates")}</div>
-              ) : (
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
-                  {project.updates?.map((update) => (
-                    <motion.div key={update.id} variants={fadeInUp} className="border rounded-md p-4 bg-white dark:bg-gray-800">
-                      <div className="font-medium">{update.title}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{update.content}</div>
-                      <div className="text-sm text-gray-500 mt-2">{formatDate(update.createdAt)}</div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </motion.div>
-
-        {/* Sidebar */}
-        <motion.div className="space-y-6" variants={staggerContainer} initial="hidden" animate="visible">
-          {/* Funding Progress */}
-          <Card className="bg-white dark:bg-gray-800 shadow-sm">
-            <CardHeader>
-              <CardTitle>{t("fundingProgress")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Progress
-                  value={fundingProgress}
-                  className="h-3 [&>div]:bg-gradient-to-r [&>div]:from-green-600 [&>div]:to-green-700"
-                />
-                <div className="flex justify-between text-sm">
-                  <span>{formatCurrency(project.fundingRaised)}</span>
-                  <span className="font-medium">{Math.round(fundingProgress)}%</span>
-                  <span>{formatCurrency(project.fundingGoal)}</span>
-                </div>
-                <Separator />
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">{t("contractType")}</span>
-                    <span className="font-medium">{project.contractType}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">{t("expectedReturn")}</span>
-                    <span className="font-medium">{project.expectedReturn}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">{t("duration")}</span>
-                    <span className="font-medium">{project.duration} {t("months")}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">{t("riskLevel")}</span>
-                    <span className="font-medium">{t(project.riskLevel)}</span>
-                  </div>
-                </div>
-                <Separator />
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                    <span>{t("created")}: {formatDate(project.createdAt)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                    <span>{t("endDate")}: {formatDate(project.endDate)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                    <span>{t("investors")}: {investors.length}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-            {canInvest && (
-              <CardContent>
-                <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => setIsInvestDialogOpen(true)}>
-                  {t("investNow")}
-                </Button>
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Location */}
-          <Card className="bg-white dark:bg-gray-800 shadow-sm">
-            <CardHeader>
-              <CardTitle>{t("location")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3151.835434509374!2d144.95373531531676!3d-37.81720997975159!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzfCsDUwJzAxLjkiUyAxNDTCsDU3JzEzLjUiRQ!5e0!3m2!1sen!2sus!4v1635781263211!5m2!1sen!2sus"
-                className="w-full h-48 rounded-md"
-                allowFullScreen
-                loading="lazy"
-                title={t("locationMap")}
-              />
-              <div className="mt-2 text-sm text-center flex items-center justify-center gap-2">
-                <MapPin className="h-4 w-4 text-green-600" /> {project.location}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Sticky Mobile Footer */}
-      {canInvest && (
-        <motion.div
-          className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-800 shadow-t-md lg:hidden"
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => setIsInvestDialogOpen(true)}>
-            {t("investNow")}
-          </Button>
-        </motion.div>
-      )}
+            </motion.div>
+          </div>
+        </section>
+      </main>
     </div>
   )
 }
 
 function SkeletonLoader() {
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64 bg-gray-100 dark:bg-gray-700" />
-          <Skeleton className="h-4 w-32 bg-gray-100 dark:bg-gray-700" />
+    <div className="flex min-h-screen flex-col">
+      <main className="flex-1 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-secondary/20 dark:from-primary/30 dark:via-background dark:to-secondary/30"></div>
+        <div className="container px-4 md:px-6 py-12">
+          <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-8">
+            <motion.div variants={fadeInUp} className="flex justify-between items-center bg-background/95 p-6 rounded-3xl">
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-64 bg-primary/20" />
+                <Skeleton className="h-4 w-32 bg-primary/20" />
+              </div>
+              <Skeleton className="h-10 w-32 bg-primary/20" />
+            </motion.div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <Skeleton className="h-96 w-full bg-primary/20 rounded-3xl" />
+                <Skeleton className="h-64 w-full bg-primary/20 rounded-3xl" />
+              </div>
+              <div className="space-y-6">
+                <Skeleton className="h-48 w-full bg-primary/20 rounded-3xl" />
+                <Skeleton className="h-32 w-full bg-primary/20 rounded-3xl" />
+              </div>
+            </div>
+          </motion.div>
         </div>
-        <Skeleton className="h-10 w-32 bg-gray-100 dark:bg-gray-700" />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <Skeleton className="h-96 w-full bg-gray-100 dark:bg-gray-700" />
-          <Skeleton className="h-64 w-full bg-gray-100 dark:bg-gray-700" />
-        </div>
-        <div className="space-y-6">
-          <Skeleton className="h-48 w-full bg-gray-100 dark:bg-gray-700" />
-          <Skeleton className="h-32 w-full bg-gray-100 dark:bg-gray-700" />
-        </div>
-      </div>
+      </main>
     </div>
   )
 }
