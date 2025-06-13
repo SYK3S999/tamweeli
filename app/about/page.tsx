@@ -67,7 +67,7 @@ export default function AboutPage() {
       id: 1,
       name: t("about.teamMember1Name"),
       title: t("about.teamMember1Title"),
-      image: "/malak1.jpg",
+      image: "/Malak1.jpg",
       socials: { twitter: "#", linkedin: "#", github: "#" },
     },
     {
