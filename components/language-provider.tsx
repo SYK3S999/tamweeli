@@ -786,6 +786,8 @@ const translations: Record<Language, { [key: string]: string }> = {
     "home.timeToFundTooltip": "Average time to secure funding on Tamweeli",
   "home.project owners": "project owners",
   "home.entrepreneurTitle": "For project owners",
+  "home.home.entrepreneur":"project owners",
+
   "home.entrepreneurDesc": "Turn your ideas into reality using tools and resources designed to help you build, fund, and grow your project",
   "home.project ownersBenefit1": "Connect with investors and experts to improve your strategy",
   "home.project ownersBenefit2": "Access funding opportunities from a network of investors",
@@ -1228,6 +1230,13 @@ const translations: Record<Language, { [key: string]: string }> = {
     "demo.investorTooltip": "Explore investment opportunities",
     "demo.entrepreneur": "Entrepreneur",
     "demo.entrepreneurDesc": "Create and manage your Shariah-compliant projects.",
+    
+
+
+
+
+
+
     "demo.entrepreneurTooltip": "Manage your startup journey",
     "demo.admin": "Admin/Consultant",
     "demo.adminDesc": "Manage platform, users, and provide consulting services.",
@@ -1976,6 +1985,8 @@ const translations: Record<Language, { [key: string]: string }> = {
   "home.project ownersTitle": "لأصحاب المشاريع ",
   "home.project ownersDesc": "حوّل أفكارك إلى واقع باستخدام أدوات وموارد مصممة لمساعدتك في بناء وتمويل وتنمية مشروعك.",
   "home.project ownersBenefit1": "التواصل مع مستشارين و خبراء لتحسين استراتيجيتك",
+  "home.entrepreneurTitle": "لرواد الأعمال",
+
   "home.project ownersBenefit2": "الوصول الى فرص تمويل من جمهور المستثمرين.",
   "home.project ownersBenefit3": "الاستفادة من خدمة المتابعة حتى بعد التمويل .",
   "home.project ownersBenefit4": "الاستفادة من أدواتنا لادارة و توسيع نطاق مشروعك .",
@@ -2675,8 +2686,8 @@ const translations: Record<Language, { [key: string]: string }> = {
     "about.visionPoint1": "الوصول العالمي للتمويل الإسلامي",
     "about.visionPoint2": "ابتكار حلول مالية",
     "about.visionPoint3": "تعزيز ثقة المجتمع",
-    "about.teamMember1Bio": "جون يقود برؤية للتمويل الأخلاقي.",
-    "about.teamMember2Bio": "جين تدفع الابتكار التكنولوجي.",
+    "about.teamMember1Bio": "ملاك تقود برؤية للتمويل الأخلاقي.",
+    "about.teamMember2Bio": "نورسين تدفع الابتكار التكنولوجي.",
     "about.teamMember3Bio": "أحمد يضمن الشفافية المالية.",
     "about.teamMember4Bio": "سارة تبني حضور علامتنا التجارية.",
     "about.ourJourney": "رحلتنا",
@@ -2704,6 +2715,17 @@ const translations: Record<Language, { [key: string]: string }> = {
     "demo.investorTooltip": "استكشف فرص الاستثمار", 
     "demo.entrepreneur": "رائد أعمال",
     "demo.entrepreneurDesc": "أنشئ وأدر مشاريعك المتوافقة مع الشريعة.",
+    "home.entrepreneur": "صاحب المشروع",
+    "home.entrepreneurDesc": "أنشئ مشروعك وابدأ في جذب الاستثمارات المتوافقة مع الشريعة.",
+    "home.entrepreneurCTAText": "أنشئ مشروعك الآن",
+
+
+
+
+
+
+
+
     "demo.entrepreneurTooltip": "أدر رحلتك الريادية",
     "demo.admin": "مدير/استشاري",
     "demo.adminDesc": "إدارة المنصة والمستخدمين وتقديم الخدمات الاستشارية.",
